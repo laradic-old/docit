@@ -1,0 +1,43 @@
+{
+    "name": "laradic/docit",
+    "description": "docs",
+    "homepage": "https://github.com/laradic/docit",
+    "keywords": [
+        "loop",
+        "extensions",
+        "blade",
+        "laravel"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Robin Radic",
+            "email": "robin@radic.nl",
+            "role": "Package Author/Developer"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=5.4.0",
+        "laravel/framework": "5.0.*",
+        "laradic/support": "~1.0",
+        "laradic/extensions": "dev-master",
+        "laradic/themes": "dev-master",
+        "naneau/semver": "0.0.7.*",
+        "symfony/dom-crawler": "~2.6",
+        "graham-campbell/github": "~2.0",
+        "graham-campbell/throttle": "3.0.*",
+        "symfony/yaml": "2.6.*"
+    },
+    "require-dev": {
+        "laradic/dev": "dev-master"
+    },
+    "scripts": {
+    },
+    "autoload": {
+        "psr-4": {
+            "Laradic\\Docit\\": "src/"
+        }
+    }
+}
