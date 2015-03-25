@@ -307,7 +307,6 @@ class GithubProjectSynchronizer
         {
             $name  = $branch['name'];
             $paths = $this->getPaths($project, $name, 'branch');
-            #$this->log->info('check project branch synced', ['project' => $project, 'branch' => $name]);
             $sha      = $branch['commit']['sha'];
             $cacheKey = md5($project->getSlug() . $name);
             $branch   = Cache::get($cacheKey, false);

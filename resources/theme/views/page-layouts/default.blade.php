@@ -1,4 +1,4 @@
-@extends('theme::layout')
+@extends('laradic/docit::layout')
 @section('page-title')
     {{ $project['title'] }}
     @if(isset($project['subtitle']))
@@ -6,18 +6,6 @@
     @endif
 @stop
 
-@section('header-nav-menu')
-
-    <li><a href="{{ URL::to('/') }}">Home</a></li>
-    <li>
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Projects</a>
-        <ul class="dropdown-menu dropdown-menu-wide">
-            @foreach(Projects::all() as $proj)
-                <li><a href="{{ $proj['url'] }}">{{ $proj['title'] }}</a></li>
-            @endforeach
-        </ul>
-    </li>
-@stop
 @section('page-header.right')
     @if($project->isGithub())
     <div class="small-padding-top extra-large-margin-right pull-right">
