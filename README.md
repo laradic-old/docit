@@ -1,8 +1,8 @@
 ![Laravel logo](http://laravel.com/assets/img/laravel-logo.png) DocIt documentation extension
 ============================
 
-[![GitHub Version](https://img.shields.io/github/tag/laradic/config.svg?style=flat-square&label=version)](http://badge.fury.io/gh/laradic%2Fconfig)
-[![Total Downloads](https://img.shields.io/packagist/dt/laradic/config.svg?style=flat-square)](https://packagist.org/packages/laradic/config)
+[![GitHub Version](https://img.shields.io/github/tag/laradic/docit.svg?style=flat-square&label=version)](http://badge.fury.io/gh/laradic%2Fdocit)
+[![Total Downloads](https://img.shields.io/packagist/dt/laradic/docit.svg?style=flat-square)](https://packagist.org/packages/laradic/docit)
 [![License](http://img.shields.io/badge/license-MIT-ff69b4.svg?style=flat-square)](http://radic.mit-license.org)
 
 #### Introduction
