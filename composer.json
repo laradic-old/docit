@@ -1,6 +1,7 @@
 {
     "name": "laradic/docit",
     "description": "docs",
+    "type": "laradic-extension",
     "homepage": "https://github.com/laradic/docit",
     "keywords": [
         "loop",
@@ -24,6 +25,7 @@
         "laradic/support": "~1.0",
         "laradic/extensions": "dev-master",
         "laradic/themes": "dev-master",
+        "laradic/pakadic": "dev-master",
         "naneau/semver": "0.0.7.*",
         "symfony/dom-crawler": "~2.6",
         "graham-campbell/github": "~2.0",
