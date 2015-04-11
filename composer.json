@@ -1,13 +1,14 @@
 {
     "name": "laradic/docit",
-    "description": "docs",
+    "description": "A documentation generator using markdown files. Able to sync with github manually or web-hook, edit markdown files and commit them. Lot of features",
     "type": "laradic-extension",
     "homepage": "https://github.com/laradic/docit",
     "keywords": [
-        "loop",
-        "extensions",
-        "blade",
-        "laravel"
+        "documentation",
+        "generator",
+        "docs",
+        "markdown",
+        "github"
     ],
     "license": "MIT",
     "authors": [
@@ -23,15 +24,17 @@
         "php": ">=5.4.0",
 
         "laradic/support": "dev-master",
-        "laradic/extensions": "dev-master",
         "laradic/themes": "dev-develop",
         "laradic/pakadic": "dev-master",
 
-        "laravel/framework": "5.0.*",
+        "laravel/framework": "~5.0",
         "naneau/semver": "0.0.7.*",
         "symfony/dom-crawler": "~2.6",
         "graham-campbell/github": "~2.0",
-        "symfony/yaml": "2.6.*"
+        "symfony/yaml": "~2.6"
+    },
+    "suggest": {
+        "laradic/extensions": "dev-master"
     },
     "require-dev": {
         "laradic/dev": "dev-master"

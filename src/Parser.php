@@ -33,16 +33,6 @@ class Parser
         $this->tags = isset($parserConfig['tags']) ? $parserConfig['tags'] : [];
     }
 
-    protected function getDocBlocks($string)
-    {
-        $matches = [];
-        $c       = preg_match_all('/\<\!---\+\s([\w\W]*?)\s\+--\>/', $string, $matches, PREG_PATTERN_ORDER);
-        var_dump($c);
-        var_dump($matches);
-
-        return $matches;
-    }
-
     protected function parseDocBlocks($string)
     {
         foreach ($this->tags as $tag => $replacement)
@@ -56,7 +46,7 @@ class Parser
     public function parse($string)
     {
         $rendered = $this->markdown->render($string);
-
-        return $this->parseDocBlocks($rendered);
+        $parsed = $this->parseDocBlocks($rendered);
+        return $parsed;
     }
 }
