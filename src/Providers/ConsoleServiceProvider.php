@@ -10,7 +10,8 @@ class ConsoleServiceProvider extends AbstractConsoleProvider
     protected $commands = [
         'CreateProject' => 'commands.laradic.docs.create.project',
         'GithubSync'    => 'commands.laradic.docs.github.sync',
-        'List'          => 'commands.laradic.docs.list'
+        'List'          => 'commands.laradic.docs.list',
+        'Test'          => 'commands.laradic.docs.test'
     ];
 
     //GithubSync

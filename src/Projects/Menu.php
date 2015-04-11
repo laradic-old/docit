@@ -2,7 +2,7 @@
 /**
  * Part of the Radic packages.
  */
-namespace Laradic\Docit;
+namespace Laradic\Docit\Projects;
 
 
 use Exception;

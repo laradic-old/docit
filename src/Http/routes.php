@@ -3,7 +3,7 @@
 Route::get('/', ['as' => 'docit.home', 'uses' => 'DocsController@index']);
 
 
-if(Config::get('laradic_docit.github.enabled') === true)
+if(Config::get('laradic/docit::github.enabled') === true)
 {
     if ( Config::get('app.debug') === true )
     {

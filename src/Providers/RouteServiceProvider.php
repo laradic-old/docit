@@ -49,7 +49,7 @@ class RouteServiceProvider extends BaseServiceProvider {
 	 */
 	public function map(Router $router)
 	{
-		$router->group(['prefix' => $this->config->get('laradic_docit.base_route'), 'namespace' => $this->namespace], function($router)
+		$router->group(['prefix' => $this->config->get('laradic/docit::base_route'), 'namespace' => $this->namespace], function($router)
 		{
 			require __DIR__ . '/../Http/routes.php';
 		});

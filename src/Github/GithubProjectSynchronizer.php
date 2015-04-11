@@ -7,8 +7,8 @@ namespace Laradic\Docit\Github;
 use Cache;
 use File;
 use GrahamCampbell\GitHub\GitHubManager;
-use Laradic\Docit\Project;
-use Laradic\Docit\ProjectFactory;
+use Laradic\Docit\Projects\Project;
+use Laradic\Docit\Projects\ProjectFactory;
 use Laradic\Support\Arr;
 use Laradic\Support\Path;
 use Laradic\Support\Str;
@@ -41,6 +41,9 @@ class GithubProjectSynchronizer
 
     /**
      * Instanciates the class
+     *
+     * @param \GrahamCampbell\GitHub\GitHubManager $gm
+     * @param \Laradic\Docit\ProjectFactory        $projects
      */
     public function __construct(GithubManager $gm, ProjectFactory $projects)
     {
@@ -123,15 +126,13 @@ class GithubProjectSynchronizer
 
     protected function getPaths(Project $project, $ref, $type)
     {
-        $githubConfig = $project->getConfig()['github'];
-
         $paths = [
             'docs'     => 'docs',
             'logs'     => 'build/logs',
             'index_md' => 'docs/index.md'
         ];
 
-        $b = $githubConfig['path_bindings'];
+        $b = $project['github.path_bindings'];
 
         if ( isset($b) )
         {
@@ -185,10 +186,9 @@ class GithubProjectSynchronizer
      */
     protected function syncRef(Project $project, $ref, $type)
     {
-        $config = $project->getConfig()['github'];
         $paths  = $this->getPaths($project, $ref, $type);
 
-        $content = new RepoContent($config['username'], $config['repository'], $this->gm);
+        $content = new RepoContent($project['github.username'], $project['github.repository'], $this->gm);
 
         $hasDocs = $content->exists($paths['docs'], $ref);
         #$hasLogs  = $content->exists($paths['logs'], $ref);
@@ -251,7 +251,7 @@ class GithubProjectSynchronizer
             # set cache sha for branches, not for tags (obviously)
             if ( $type === 'branch' )
             {
-                $branchData = $this->gm->repo()->branches($config['username'], $config['repository'], $ref);
+                $branchData = $this->gm->repo()->branches($project['github.username'], $project['github.repository'], $ref);
                 Cache::forever($this->getCacheKey($project, $ref), $branchData['commit']['sha']);
             }
         }
@@ -264,9 +264,9 @@ class GithubProjectSynchronizer
             return false;
         }
 
-        $c = $project->getConfig()['github'];
+        ['github'];
 
-        if ( ! isset($c['branches']) or ! is_array($c['branches']) or ! in_array($branch, $c['branches']) )
+        if ( ! isset($project['github.branches']) or ! is_array($project['github.branches']) or ! in_array($branch, $project['github.branches']) )
         {
             return false;
         }
@@ -293,20 +293,18 @@ class GithubProjectSynchronizer
             return [];
         }
 
-        $c = $project->getConfig()['github'];
-
-        if ( ! isset($c['branches']) or ! is_array($c['branches']) or count($c['branches']) === 0 )
+        if ( ! isset($project['github.branches']) or ! is_array($project['github.branches']) or count($project['github.branches']) === 0 )
         {
             return [];
         }
 
 
-        $branches       = $this->gm->repo()->branches($c['username'], $c['repository']);
+        $branches       = $this->gm->repo()->branches($project['github.username'], $project['github.repository']);
         $branchesToSync = [];
         foreach ($branches as $branch)
         {
-            $name  = $branch['name'];
-            $paths = $this->getPaths($project, $name, 'branch');
+            $name     = $branch['name'];
+            $paths    = $this->getPaths($project, $name, 'branch');
             $sha      = $branch['commit']['sha'];
             $cacheKey = md5($project->getSlug() . $name);
             $branch   = Cache::get($cacheKey, false);
@@ -334,13 +332,13 @@ class GithubProjectSynchronizer
         }
 
         $currentVersions = Arr::keys($project->getVersions());
-        $pc              = $project->getConfig()['github']; #$project->getConfig());
+
 
         $tagsToSync = [];
-        $excludes   = $pc['exclude_tags'];
-        $start      = is_string($pc['start_at_tag']) ? Parser::parse(Str::remove($pc['start_at_tag'], 'v')) : false;
+        $excludes   = $project['github.exclude_tags'];
+        $start      = is_string($project['github.start_at_tag']) ? Parser::parse(Str::remove($project['github.start_at_tag'], 'v')) : false;
 
-        $tags = $this->gm->repo()->tags($pc['username'], $pc['repository']);
+        $tags = $this->gm->repo()->tags($project['github.username'], $project['github.repository']);
         foreach ($tags as $tag)
         {
             $tagVersion = $tag['name'];

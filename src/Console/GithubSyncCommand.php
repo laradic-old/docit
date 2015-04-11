@@ -54,9 +54,9 @@ class GithubSyncCommand extends AbstractConsoleCommand
         $this->comment('Found ' . count($tagsToSync) . ' tags that needs to be synced in ' . $project);
         foreach ($tagsToSync as $tag)
         {
-            $this->comment('Syncing ' . $tag['name']);
-            $this->syncer->syncTag($project, $tag['name']);
-            $this->info($tag['name'] . ' synced.');
+            $this->comment('Syncing ' . $tag);
+            $this->syncer->syncTag($project, $tag);
+            $this->info($tag . ' synced.');
         }
         $this->comment('Found ' . count($branchesToSync) . ' branches that needs to be synced');
         foreach($branchesToSync as $branch)

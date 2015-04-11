@@ -21,15 +21,16 @@
     "prefer-stable": true,
     "require": {
         "php": ">=5.4.0",
-        "laravel/framework": "5.0.*",
-        "laradic/support": "~1.0",
+
+        "laradic/support": "dev-master",
         "laradic/extensions": "dev-master",
-        "laradic/themes": "dev-master",
+        "laradic/themes": "dev-develop",
         "laradic/pakadic": "dev-master",
+
+        "laravel/framework": "5.0.*",
         "naneau/semver": "0.0.7.*",
         "symfony/dom-crawler": "~2.6",
         "graham-campbell/github": "~2.0",
-        "graham-campbell/throttle": "3.0.*",
         "symfony/yaml": "2.6.*"
     },
     "require-dev": {

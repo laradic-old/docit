@@ -2,7 +2,7 @@
 /**
  * Part of the Radic packages.
  */
-namespace Laradic\Docit;
+namespace Laradic\Docit\Projects;
 
 
 use Exception;
@@ -191,7 +191,7 @@ class Project implements \ArrayAccess
      */
     public function offsetExists($key)
     {
-        return array_key_exists($key, $this->config);
+        return array_has($this->config, $key);
     }
 
     /**
@@ -202,7 +202,7 @@ class Project implements \ArrayAccess
      */
     public function offsetGet($key)
     {
-        return $this->config[$key];
+        return array_get($this->config, $key);
     }
 
     /**
@@ -214,13 +214,16 @@ class Project implements \ArrayAccess
      */
     public function offsetSet($key, $value)
     {
-        if ( is_null($key) )
+        if (is_array($key))
         {
-            $this->config[] = $value;
+            foreach ($key as $innerKey => $innerValue)
+            {
+                array_set($this->config, $innerKey, $innerValue);
+            }
         }
         else
         {
-            $this->config[$key] = $value;
+            array_set($this->config, $key, $value);
         }
     }
 
@@ -232,7 +235,7 @@ class Project implements \ArrayAccess
      */
     public function offsetUnset($key)
     {
-        unset($this->config[$key]);
+        array_set($this->config, $key, null);
     }
 
     public function toString()

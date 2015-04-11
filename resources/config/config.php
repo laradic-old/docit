@@ -16,19 +16,26 @@ return array(
         'enabled' => true,
         'token' => env('GITHUB_TOKEN', null),
         'webhook_sync' => env('GITHUB_WEBHOOK_SYNC', null),
+        'oauth_io' => env('GITHUB_OAUTH_IO', null)
     ),
 
     'disqus' => array(
         'enabled' => true,
         'shortname' => 'docit',
-
     ),
 
-    'header_menu' => array(
-        'Home' => 'home',
-        'Projects' => '#project-list#',
-        'Test actions' => array(
-            'Throttle' => 'throttle'
+    'parser' => array(
+        /* Tags can be added in the markdown file like:
+         * <!---+ col-md-6 +-->
+         * <!---+ /col-md-6 +-->
+         * Add anything you'd like
+         */
+
+        'tags' => array(
+            'col-md-6'   => '<div class="col-md-6">',
+            '\/col-md-6' => '</div>',
+            'row'        => '<div class="row">',
+            '\/row'      => '</div>'
         )
     ),
     'console' => true // Add console commands

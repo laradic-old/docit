@@ -2,16 +2,12 @@
 /**
  * Part of the Radic packages.
  */
-namespace Laradic\Docit;
+namespace Laradic\Docit\Projects;
 
 use ArrayAccess;
 use Cache;
-
-use Debugger;
 use File;
-use Illuminate\Support\Collection;
 use Laradic\Support\Path;
-use Markdown;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -63,13 +59,13 @@ class Page implements ArrayAccess
         $fileLastModified = File::lastModified($filePath);
         $fileId           = md5($filePath);
 
-        $projectPath = Path::join($this->project->getPath(), 'project.php');
+        $projectPath         = Path::join($this->project->getPath(), 'project.php');
         $projectLastModified = File::lastModified($projectPath);
 
-        if ( Cache::has($fileId . '_lastModified') && Cache::has($fileId . '_project_lastModified')  )
+        if ( Cache::has($fileId . '_lastModified') && Cache::has($fileId . '_project_lastModified') )
         {
 
-            if ( $fileLastModified > Cache::get($fileId . '_lastModified') or $projectLastModified > Cache::get($fileId . '_project_lastModified'))
+            if ( $fileLastModified > Cache::get($fileId . '_lastModified') or $projectLastModified > Cache::get($fileId . '_project_lastModified') )
             {
                 Cache::forget($fileId);
                 Cache::forget($fileId . '_lastModified');
@@ -86,15 +82,15 @@ class Page implements ArrayAccess
         $page = [
             $raw,
             array_merge($this->project->getDefaultPageAttributes(), $this->parseAttributes($raw)),
-            $this->markdownify($raw)
+            $this->parse($raw)
         ];
+
         Cache::forever($fileId . '_lastModified', $fileLastModified);
         Cache::forever($fileId . '_project_lastModified', $projectLastModified);
         Cache::forever($fileId, $page);
 
 
         return $page;
-
     }
 
     public function getFilePath()
@@ -117,9 +113,9 @@ class Page implements ArrayAccess
     }
 
     /** @return string */
-    public function markdownify($str)
+    public function parse($str)
     {
-        return Markdown::render($str);
+        return app('docit.parser')->parse($str);
     }
 
     public function getVersion()
@@ -227,5 +223,15 @@ class Page implements ArrayAccess
     public function offsetUnset($key)
     {
         unset($this->attributes[$key]);
+    }
+
+    /**
+     * Get the value of path
+     *
+     * @return mixed
+     */
+    public function getPath()
+    {
+        return $this->path;
     }
 }

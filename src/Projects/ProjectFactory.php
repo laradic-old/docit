@@ -2,7 +2,7 @@
 /**
  * Part of the Radic packages.
  */
-namespace Laradic\Docit;
+namespace Laradic\Docit\Projects;
 
 #use Debugger;
 use File;
@@ -23,6 +23,9 @@ use Laradic\Support\Str;
 class ProjectFactory implements ProjectFactoryContract
 {
 
+    /**
+     * @var Project[]
+     */
     protected $projects;
 
     /**
@@ -80,6 +83,12 @@ class ProjectFactory implements ProjectFactoryContract
         return $projects;
     }
 
+    /**
+     * all
+     *
+     * @param bool $bySlug
+     * @return array|\Laradic\Docit\Project[]
+     */
     public function all($bySlug = false)
     {
         return $bySlug === true ? $this->projects : Arr::values($this->projects);
@@ -140,6 +149,17 @@ class ProjectFactory implements ProjectFactoryContract
 
         return $this->url->to($uri);
     }
+
+    /**
+     * Get the value of config
+     *
+     * @return array
+     */
+    public function getConfig()
+    {
+        return $this->config;
+    }
+
 
 
 }

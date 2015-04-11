@@ -1,6 +1,11 @@
-<?php namespace Laradic\Docit\Http\Controllers;
+<?php
+/**
+ * Part of the Laradic packages.
+ * MIT License and copyright information bundled with this package in the LICENSE file.
+ */
+namespace Laradic\Docit\Http\Controllers;
 
-#use App\Http\Controllers\Controller as BaseController;
+
 use File;
 use GitHub;
 use GrahamCampbell\GitHub\GitHubManager;
@@ -13,6 +18,15 @@ use Request;
 use Response;
 use Symfony\Component\VarDumper\VarDumper;
 
+/**
+ * Class GithubController
+ *
+ * @package     Laradic\Docit\Http\Controllers
+ * @author      Robin Radic
+ * @license     MIT
+ * @copyright   2011-2015, Robin Radic
+ * @link        http://radic.mit-license.org
+ */
 class GithubController extends BaseController
 {
 
