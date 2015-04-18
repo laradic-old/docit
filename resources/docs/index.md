@@ -31,9 +31,29 @@ option to alter pages on the website and committing it to github (after which gi
   
   
 ### For all languages
+<!---+ row +-->
+<!---+ col-md-8 +-->
+<!---+ contextual:info +-->
 Even though DocIt is created with PHP, there's no reason to only use it for PHP documentation. It's usefull for any kind of software package
 and therefor perfect if you'd like to use it for projects using other languages.
+<!---+ /contextual +-->
+<!---+ /col-md-8 +-->
+<!---+ col-md-4 +-->
+<!---+ bar:success:0:20:100 +-->
 
+<!---+ bs-material +-->
+<!---+ bar:warning:0:70:100 +-->
+<!---+ /bs-material +-->
 
+<!---+ /col-md-4 +-->
+<!---+ /row +-->
+
+### tables
+<!---+ table table-hover table-condensed table-striped table-light +-->
+| Table name | Description | Counter |
+|---|---|---|
+| Asdf | Asdf | Asdf |
+| Asdf | Asdf | Asdf |
+<!---+ /table +-->
 ### Copyright/License
 Copyright 2015 [Robin Radic](https://github.com/RobinRadic) - [MIT Licensed](http://radic.mit-license.org)

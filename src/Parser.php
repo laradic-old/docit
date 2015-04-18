@@ -37,7 +37,7 @@ class Parser
     {
         foreach ($this->tags as $tag => $replacement)
         {
-            $string = preg_replace('/\<\!---\+\s(' . $tag . ')\s\+--\>/', $replacement, $string);
+            $string = preg_replace('/\<\!---\+\s' . $tag . '\s\+--\>/', "\n$replacement\n", $string);
         }
 
         return $string;
@@ -49,4 +49,5 @@ class Parser
         $parsed = $this->parseDocBlocks($rendered);
         return $parsed;
     }
-}
+}/*
+*/

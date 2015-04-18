@@ -44,6 +44,9 @@
             background: #3f3f3f;
             color: #dcdcdc;
         }
+        .markdoc {
+            display: none;
+        }
     </style>
     @parent
 @stop
@@ -69,7 +72,7 @@
               </header>
 
               <section>
-                  <div class="blade-markdown">
+                  <div class="blade-markdown markdoc">
                       <?php echo $content; ?>
                   </div>
               </section>
@@ -87,6 +90,25 @@
 @stop
 
 @section('scripts.boot')
+    <script>
+        (function(){
+            var packadic = (window.packadic = window.packadic || {});
+            packadic.mergeConfig({
+                requireJS: {
+                    paths: {
+                        'docit/markdoc': '{{ Asset::url('laradic/docit::scripts/markdoc') }}'
+                    }
+                }
+            });
+
+            packadic.bindEventHandler('starting', function(){
+                require([ 'jquery', 'docit/markdoc'], function( $, markdoc ){
+                    markdoc.applyTo('#page-content-box .markdoc');
+                });
+            });
+        }.call());
+    </script>
+
     @if($project->isGithub() and !empty($project['github.branches']))
         <script>
             (function(){
@@ -99,25 +121,25 @@
 
 
                 packadic.mergeConfig({
-                    debug: true,
+                    debug   : true,
                     oauth_io: '{{ Config::get('laradic/docit::github.oauth_io') }}'
                 });
 
                 packadic.bindEventHandler('starting', function(){
-                    require([ 'jquery', 'github-editor', 'string' ], function( $, editor, _s ){
+                    require([ 'jquery', 'docit/markdoc', 'github-editor', 'string' ], function( $, editor, _s ){
                         window.editor = editor;
 
-                        $('#clear-localstorage').on('click', function(e){
+                        $('#clear-localstorage').on('click', function( e ){
                             e.preventDefault();
                             localStorage.clear();
                             console.info('localStorage cleared');
                         });
 
-                        var $githubEditorContainer  = $('#github-editor-container'),
-                            $githubAuthButton       = $('#github-auth-button'),
-                            $githubEditButton       = $("#github-edit-button"),
-                            $githubEditMenuButton   = $("#github-edit-menu-button"),
-                            $pageContentBox         = $("#page-content-box");
+                        var $githubEditorContainer = $('#github-editor-container'),
+                            $githubAuthButton = $('#github-auth-button'),
+                            $githubEditButton = $("#github-edit-button"),
+                            $githubEditMenuButton = $("#github-edit-menu-button"),
+                            $pageContentBox = $("#page-content-box");
 
                         editor.ui.getAuthButton($githubAuthButton);
 

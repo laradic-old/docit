@@ -54,7 +54,7 @@ class Page implements ArrayAccess
 
     protected function getPage()
     {
-
+        $debug = config('app.debug');
         $filePath         = $this->getFilePath();
         $fileLastModified = File::lastModified($filePath);
         $fileId           = md5($filePath);
@@ -62,7 +62,7 @@ class Page implements ArrayAccess
         $projectPath         = Path::join($this->project->getPath(), 'project.php');
         $projectLastModified = File::lastModified($projectPath);
 
-        if ( Cache::has($fileId . '_lastModified') && Cache::has($fileId . '_project_lastModified') )
+        if ( !$debug and Cache::has($fileId . '_lastModified') && Cache::has($fileId . '_project_lastModified') )
         {
 
             if ( $fileLastModified > Cache::get($fileId . '_lastModified') or $projectLastModified > Cache::get($fileId . '_project_lastModified') )
@@ -85,10 +85,12 @@ class Page implements ArrayAccess
             $this->parse($raw)
         ];
 
-        Cache::forever($fileId . '_lastModified', $fileLastModified);
-        Cache::forever($fileId . '_project_lastModified', $projectLastModified);
-        Cache::forever($fileId, $page);
-
+        if(!$debug)
+        {
+            Cache::forever($fileId . '_lastModified', $fileLastModified);
+            Cache::forever($fileId . '_project_lastModified', $projectLastModified);
+            Cache::forever($fileId, $page);
+        }
 
         return $page;
     }

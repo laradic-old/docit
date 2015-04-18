@@ -6,13 +6,13 @@
 namespace Laradic\Docit\Http\Controllers;
 
 
-use File;
 use GitHub;
 use GrahamCampbell\GitHub\GitHubManager;
 use Illuminate\Routing\Controller as BaseController;
 use Input;
 use Laradic\Docit\Contracts\ProjectFactory;
 use Laradic\Docit\Github\GithubProjectSynchronizer;
+use League\OAuth2\Client\Provider\Github as GithubProvider;
 use Log;
 use Request;
 use Response;
@@ -43,7 +43,7 @@ class GithubController extends BaseController
     {
         $this->github     = $github;
         $this->githubSync = $githubSync;
-        $this->projects = $projects;
+        $this->projects   = $projects;
     }
 
     public function sync($project)
@@ -51,6 +51,25 @@ class GithubController extends BaseController
         $this->githubSync->sync($project);
         $log = $this->githubSync->getLogEntries(true);
         VarDumper::dump($log);
+    }
+
+    public function getAccessCode()
+    {
+    }
+
+    protected function getProvider($projectSlug)
+    {
+        $project = $this->projects->get($projectSlug);
+        if(!$project->isGithub())
+        {
+            throw new \Exception("Project [$projectSlug] is not a github project");
+        }
+        return new GithubProvider([
+            'clientId'     => $project['github.clientId'],
+            'clientSecret' => $project['github.clientSecret'],
+            'redirectUri'  => \Config::get('laradic/docit::github.redirectUri'),
+            'scopes'       => ['email', '...', '...'],
+        ]);
     }
 
     public function webhook($type)
@@ -69,18 +88,19 @@ class GithubController extends BaseController
         ];
         $payload = Input::all();
 
-        foreach($this->projects->all() as $project)
+        foreach ($this->projects->all() as $project)
         {
-            if(isset($project['github']) && isset($project['github']['enabled']) && $project['github']['enabled'] == true)
+            if ( isset($project['github']) && isset($project['github']['enabled']) && $project['github']['enabled'] == true )
             {
-                if($project['github']['username'] . '/' . $project['github']['repository'] === strtolower($payload['repository']['full_name']))
+                if ( $project['github']['username'] . '/' . $project['github']['repository'] === strtolower($payload['repository']['full_name']) )
                 {
                     $hash = hash_hmac('sha1', file_get_contents("php://input"), $project['github']['webhook_secret']);
-                    if($headers['signature'] === "sha1=$hash")
+                    if ( $headers['signature'] === "sha1=$hash" )
                     {
                         Log::info('github webhook received push event. Syncing ' . $project['slug']);
                         $this->githubSync->sync($project['slug']);
                         Log::info('github webhook received push event. Synced ' . $project['slug'], $this->githubSync->getLogEntries(true));
+
                         return Response::make();
                     }
                     else
@@ -92,6 +112,7 @@ class GithubController extends BaseController
         }
 
         Log::error('Github webhook received push event for unkown project', $payload);
+
         return Response::make('', 500);
     }
 }
