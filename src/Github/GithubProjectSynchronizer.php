@@ -1,19 +1,21 @@
 <?php
 /**
- * Part of the Radic packages.
+ * Part of the Robin Radic's PHP packages.
+ *
+ * MIT License and copyright information bundled with this package
+ * in the LICENSE file or visit http://radic.mit-license.com
  */
 namespace Laradic\Docit\Github;
 
 use Cache;
 use File;
 use GrahamCampbell\GitHub\GitHubManager;
+use Laradic\Docit\Contracts\ProjectSynchronizer;
 use Laradic\Docit\Projects\Project;
 use Laradic\Docit\Projects\ProjectFactory;
 use Laradic\Support\Arr;
 use Laradic\Support\Path;
 use Laradic\Support\Str;
-use Monolog\Handler\BufferHandler;
-use Monolog\Handler\NullHandler;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
 use Naneau\SemVer\Compare;
@@ -22,15 +24,16 @@ use Symfony\Component\Yaml\Yaml;
 
 
 /**
- * Class SyncManager
+ * This is the GithubProjectSynchronizer class.
  *
- * @package     Laradic\Docit
- * @author      Robin Radic
- * @license     MIT
- * @copyright   2011-2015, Robin Radic
- * @link        http://radic.mit-license.org
+ * @package        Laradic\Docit
+ * @version        1.0.0
+ * @author         Robin Radic
+ * @license        MIT License
+ * @copyright      2015, Robin Radic
+ * @link           https://github.com/robinradic
  */
-class GithubProjectSynchronizer
+class GithubProjectSynchronizer implements ProjectSynchronizer
 {
 
     protected $gm;
@@ -42,14 +45,14 @@ class GithubProjectSynchronizer
     /**
      * Instanciates the class
      *
-     * @param \GrahamCampbell\GitHub\GitHubManager $gm
-     * @param \Laradic\Docit\ProjectFactory        $projects
+     * @param \GrahamCampbell\GitHub\GitHubManager   $gm
+     * @param \Laradic\Docit\Projects\ProjectFactory $projects
      */
     public function __construct(GithubManager $gm, ProjectFactory $projects)
     {
         $this->gm       = $gm;
         $this->projects = $projects;
-        $this->log      = new Logger('github_sync_manager', [new TestHandler()]);
+        $this->log      = new Logger('github_sync_manager', [ new TestHandler() ]);
     }
 
     public function getLog()
@@ -72,16 +75,16 @@ class GithubProjectSynchronizer
     {
         //TestHandler
         $handlers = $this->log->getHandlers();
-        foreach ($handlers as $handler)
+        foreach ( $handlers as $handler )
         {
             if ( $handler instanceof TestHandler )
             {
                 if ( $messageAsKeys )
                 {
-                    $entries = [];
-                    foreach ($handler->getRecords() as $entry)
+                    $entries = [ ];
+                    foreach ( $handler->getRecords() as $entry )
                     {
-                        $entries[$entry['message']] = $entry;
+                        $entries[ $entry[ 'message' ] ] = $entry;
                     }
 
                     return $entries;
@@ -99,7 +102,7 @@ class GithubProjectSynchronizer
         {
             if ( ! $this->projects->has($project) )
             {
-                $this->log->error('resolve project failed: could not find project', ['project' => $project]);
+                $this->log->error('resolve project failed: could not find project', [ 'project' => $project ]);
 
                 return false; #throw new Exception('Project does not exists for sync by git');
             }
@@ -107,11 +110,11 @@ class GithubProjectSynchronizer
             $project = $this->projects->make($project);
         }
 
-        $config = $project->getConfig()['github'];
+        $config = $project->getConfig()[ 'github' ];
 
-        if ( $config['enabled'] !== true )
+        if ( $config[ 'enabled' ] !== true )
         {
-            $this->log->error('resolve project failed: project has github disabled', ['project' => $project]);
+            $this->log->error('resolve project failed: project has github disabled', [ 'project' => $project ]);
 
             return false; #throw new Exception('Project has github disabled, what am i doing here..');
         }
@@ -132,18 +135,18 @@ class GithubProjectSynchronizer
             'index_md' => 'docs/index.md'
         ];
 
-        $b = $project['github.path_bindings'];
+        $b = $project[ 'github.path_bindings' ];
 
         if ( isset($b) )
         {
-            foreach ($b as $k => $v)
+            foreach ( $b as $k => $v )
             {
-                $paths[$k] = $v;
+                $paths[ $k ] = $v;
             }
         }
 
 
-        $paths['local.project'] = $project->getPath();
+        $paths[ 'local.project' ] = $project->getPath();
 
         $folder = $ref;
 
@@ -154,7 +157,7 @@ class GithubProjectSynchronizer
         }
 
 
-        $paths['local.destination'] = Path::join($paths['local.project'], $folder);
+        $paths[ 'local.destination' ] = Path::join($paths[ 'local.project' ], $folder);
 
         return $paths;
     }
@@ -164,19 +167,19 @@ class GithubProjectSynchronizer
     {
         $project = $this->resolveProject($project);
         $tags    = $this->getUnsyncedTags($project);
-        $this->log->info('synchronising project ' . $project->getSlug(), ['project' => $project]);
+        $this->log->info('synchronising project ' . $project->getSlug(), [ 'project' => $project ]);
 
-        foreach ($tags as $tag)
+        foreach ( $tags as $tag )
         {
             $this->syncTag($project, $tag);
         }
 
         $branches = $this->getUnsyncedBranches($project);
-        foreach ($branches as $branch)
+        foreach ( $branches as $branch )
         {
             $this->syncBranch($project, $branch);
         }
-        $this->log->info('synchronized project ' . $project->getSlug(), ['project' => $project]);
+        $this->log->info('synchronized project ' . $project->getSlug(), [ 'project' => $project ]);
     }
 
 
@@ -186,26 +189,26 @@ class GithubProjectSynchronizer
      */
     protected function syncRef(Project $project, $ref, $type)
     {
-        $paths  = $this->getPaths($project, $ref, $type);
+        $paths = $this->getPaths($project, $ref, $type);
 
-        $content = new RepoContent($project['github.username'], $project['github.repository'], $this->gm);
+        $content = new RepoContent($project[ 'github.username' ], $project[ 'github.repository' ], $this->gm);
 
-        $hasDocs = $content->exists($paths['docs'], $ref);
+        $hasDocs = $content->exists($paths[ 'docs' ], $ref);
         #$hasLogs  = $content->exists($paths['logs'], $ref);
         #$hasIndex = $content->exists($paths['index_md'], $ref);
 
         if ( $hasDocs )
         {
-            $this->log->info("synchronizing docs for $type $ref ", ['project' => $project, "$type" => $ref]);
+            $this->log->info("synchronizing docs for $type $ref ", [ 'project' => $project, "$type" => $ref ]);
 
             # parse menu and get pages to sync
-            $menu            = $content->show(Path::join($paths['docs'], 'menu.yml'), $ref);
-            $menuContent     = base64_decode($menu['content']);
+            $menu            = $content->show(Path::join($paths[ 'docs' ], 'menu.yml'), $ref);
+            $menuContent     = base64_decode($menu[ 'content' ]);
             $menuArray       = Yaml::parse($menuContent);
-            $unfilteredPages = [];
-            $this->extractPagesFromMenu($menuArray['menu'], $unfilteredPages);
-            $filteredPages = [];
-            foreach ($unfilteredPages as $page) # filter out pages that link to external sites
+            $unfilteredPages = [ ];
+            $this->extractPagesFromMenu($menuArray[ 'menu' ], $unfilteredPages);
+            $filteredPages = [ ];
+            foreach ( $unfilteredPages as $page ) # filter out pages that link to external sites
             {
                 if ( Str::startsWith($page, 'http') || Str::startsWith($page, '//') || Str::startsWith($page, 'git') )
                 {
@@ -213,14 +216,14 @@ class GithubProjectSynchronizer
                 }
                 if ( ! in_array($page, $filteredPages) )
                 {
-                    $filteredPages[] = $page;
+                    $filteredPages[ ] = $page;
                 }
             }
 
             # get all pages their content and save to local
-            foreach ($filteredPages as $pagePath)
+            foreach ( $filteredPages as $pagePath )
             {
-                $path = Path::join($paths['docs'], $pagePath . '.md');
+                $path = Path::join($paths[ 'docs' ], $pagePath . '.md');
 
                 # check if page exists on remote
                 $exists = $content->exists($path, $ref);
@@ -233,26 +236,26 @@ class GithubProjectSynchronizer
                 $pageRaw = $content->show('/' . $path, $ref);
 
                 # transform remote directory path to local directory path
-                $dir = Str::remove($pageRaw['path'], $paths['docs']);
-                $dir = Str::remove($dir, $pageRaw['name']);
-                $dir = Path::canonicalize(Path::join($paths['local.destination'], $dir));
+                $dir = Str::remove($pageRaw[ 'path' ], $paths[ 'docs' ]);
+                $dir = Str::remove($dir, $pageRaw[ 'name' ]);
+                $dir = Path::canonicalize(Path::join($paths[ 'local.destination' ], $dir));
                 if ( ! File::isDirectory($dir) )
                 {
                     File::makeDirectory($dir, 0777, true);
                 }
 
                 # raw github page to utf8 and save it to local
-                File::put(Path::join($dir, $pageRaw['name']), base64_decode($pageRaw['content']));
+                File::put(Path::join($dir, $pageRaw[ 'name' ]), base64_decode($pageRaw[ 'content' ]));
             }
 
             # save the menu to local
-            File::put(Path::join($paths['local.destination'], 'menu.yml'), $menuContent);
+            File::put(Path::join($paths[ 'local.destination' ], 'menu.yml'), $menuContent);
 
             # set cache sha for branches, not for tags (obviously)
             if ( $type === 'branch' )
             {
-                $branchData = $this->gm->repo()->branches($project['github.username'], $project['github.repository'], $ref);
-                Cache::forever($this->getCacheKey($project, $ref), $branchData['commit']['sha']);
+                $branchData = $this->gm->repo()->branches($project[ 'github.username' ], $project[ 'github.repository' ], $ref);
+                Cache::forever($this->getCacheKey($project, $ref), $branchData[ 'commit' ][ 'sha' ]);
             }
         }
     }
@@ -264,9 +267,9 @@ class GithubProjectSynchronizer
             return false;
         }
 
-        ['github'];
+        [ 'github' ];
 
-        if ( ! isset($project['github.branches']) or ! is_array($project['github.branches']) or ! in_array($branch, $project['github.branches']) )
+        if ( ! isset($project[ 'github.branches' ]) or ! is_array($project[ 'github.branches' ]) or ! in_array($branch, $project[ 'github.branches' ]) )
         {
             return false;
         }
@@ -287,35 +290,35 @@ class GithubProjectSynchronizer
 
     public function getUnsyncedBranches($project)
     {
-        $this->log->info('getting unsynced branches', ['project' => $project]);
+        $this->log->info('getting unsynced branches', [ 'project' => $project ]);
         if ( ! $project = $this->resolveProject($project) )
         {
-            return [];
+            return [ ];
         }
 
-        if ( ! isset($project['github.branches']) or ! is_array($project['github.branches']) or count($project['github.branches']) === 0 )
+        if ( ! isset($project[ 'github.branches' ]) or ! is_array($project[ 'github.branches' ]) or count($project[ 'github.branches' ]) === 0 )
         {
-            return [];
+            return [ ];
         }
 
 
-        $branches       = $this->gm->repo()->branches($project['github.username'], $project['github.repository']);
-        $branchesToSync = [];
-        foreach ($branches as $branch)
+        $branches       = $this->gm->repo()->branches($project[ 'github.username' ], $project[ 'github.repository' ]);
+        $branchesToSync = [ ];
+        foreach ( $branches as $branch )
         {
-            $name     = $branch['name'];
+            $name     = $branch[ 'name' ];
             $paths    = $this->getPaths($project, $name, 'branch');
-            $sha      = $branch['commit']['sha'];
+            $sha      = $branch[ 'commit' ][ 'sha' ];
             $cacheKey = md5($project->getSlug() . $name);
             $branch   = Cache::get($cacheKey, false);
-            if ( $branch !== $sha or $branch === false or ! File::isDirectory($paths['local.destination']) )
+            if ( $branch !== $sha or $branch === false or ! File::isDirectory($paths[ 'local.destination' ]) )
             {
-                $branchesToSync[] = $name;
-                $this->log->info("marking branch $name for synchronisation", ['project' => $project->getSlug(), 'branch' => $branch]);
+                $branchesToSync[ ] = $name;
+                $this->log->info("marking branch $name for synchronisation", [ 'project' => $project->getSlug(), 'branch' => $branch ]);
             }
             else
             {
-                $this->log->info("skipping branch $name", ['project' => $project->getSlug(), 'branch' => $branch]);
+                $this->log->info("skipping branch $name", [ 'project' => $project->getSlug(), 'branch' => $branch ]);
             }
         }
         $b = $branchesToSync;
@@ -325,26 +328,26 @@ class GithubProjectSynchronizer
 
     public function getUnsyncedTags($project)
     {
-        $this->log->info('getting unsynced tags', ['project' => $project]);
+        $this->log->info('getting unsynced tags', [ 'project' => $project ]);
         if ( ! $project = $this->resolveProject($project) )
         {
-            return [];
+            return [ ];
         }
 
         $currentVersions = Arr::keys($project->getVersions());
 
 
-        $tagsToSync = [];
-        $excludes   = $project['github.exclude_tags'];
-        $start      = is_string($project['github.start_at_tag']) ? Parser::parse(Str::remove($project['github.start_at_tag'], 'v')) : false;
+        $tagsToSync = [ ];
+        $excludes   = $project[ 'github.exclude_tags' ];
+        $start      = is_string($project[ 'github.start_at_tag' ]) ? Parser::parse(Str::remove($project[ 'github.start_at_tag' ], 'v')) : false;
 
-        $tags = $this->gm->repo()->tags($project['github.username'], $project['github.repository']);
-        foreach ($tags as $tag)
+        $tags = $this->gm->repo()->tags($project[ 'github.username' ], $project[ 'github.repository' ]);
+        foreach ( $tags as $tag )
         {
-            $tagVersion = $tag['name'];
+            $tagVersion = $tag[ 'name' ];
             #
 
-            $tagVersionParsed = Parser::parse(Str::remove($tag['name'], 'v'));
+            $tagVersionParsed = Parser::parse(Str::remove($tag[ 'name' ], 'v'));
             $tagVersionShort  = $tagVersionParsed->getMajor() . '.' . $tagVersionParsed->getMinor();
 
             if ( ($start !== false AND Compare::smallerThan(Parser::parse($tagVersionParsed), $start))
@@ -352,46 +355,46 @@ class GithubProjectSynchronizer
                 (in_array($tagVersion, $excludes) OR in_array($tagVersionShort, $currentVersions))
             )
             {
-                $this->log->info("skipping tag $tagVersion", ['project' => $project->getSlug(), 'tag' => $tagVersion]);
+                $this->log->info("skipping tag $tagVersion", [ 'project' => $project->getSlug(), 'tag' => $tagVersion ]);
                 continue;
             }
-            $this->log->info("marking tag $tagVersion for synchronisation", ['project' => $project->getSlug(), 'tag' => $tagVersion]);
+            $this->log->info("marking tag $tagVersion for synchronisation", [ 'project' => $project->getSlug(), 'tag' => $tagVersion ]);
 
-            $tagsToSync[] = $tagVersion;
+            $tagsToSync[ ] = $tagVersion;
         }
 
         return $tagsToSync;
     }
 
-    public function extractPagesFromMenu($menuArray, &$pages = [])
+    public function extractPagesFromMenu($menuArray, &$pages = [ ])
     {
-        foreach ($menuArray as $key => $val)
+        foreach ( $menuArray as $key => $val )
         {
             if ( is_string($key) && is_string($val) )
             {
-                $pages[] = $val;
+                $pages[ ] = $val;
             }
             elseif ( is_string($key) && $key === 'children' && is_array($val) )
             {
                 $this->extractPagesFromMenu($val, $pages);
             }
-            elseif ( isset($val['name']) )
+            elseif ( isset($val[ 'name' ]) )
             {
-                if ( isset($val['page']) )
+                if ( isset($val[ 'page' ]) )
                 {
-                    $pages[] = $val['page'];
+                    $pages[ ] = $val[ 'page' ];
                 }
-                if ( isset($val['href']) )
+                if ( isset($val[ 'href' ]) )
                 {
                     //$item['href'] = $this->resolveLink($val['href']);
                 }
-                if ( isset($val['icon']) )
+                if ( isset($val[ 'icon' ]) )
                 {
                     //$item['icon'] = $val['icon'];
                 }
-                if ( isset($val['children']) && is_array($val['children']) )
+                if ( isset($val[ 'children' ]) && is_array($val[ 'children' ]) )
                 {
-                    $this->extractPagesFromMenu($val['children'], $pages);
+                    $this->extractPagesFromMenu($val[ 'children' ], $pages);
                 }
             }
         }

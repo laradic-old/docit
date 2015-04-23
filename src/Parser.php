@@ -5,7 +5,6 @@
 namespace Laradic\Docit;
 
 use Radic\BladeExtensions\Contracts\MarkdownRenderer;
-use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * Class Parser
@@ -18,8 +17,10 @@ use Symfony\Component\VarDumper\VarDumper;
  */
 class Parser
 {
+
     protected $markdown;
-    protected $tags = [];
+
+    protected $tags = [ ];
 
     /**
      * Instantiates the class
@@ -30,12 +31,12 @@ class Parser
     public function __construct(MarkdownRenderer $markdown, array $parserConfig = array())
     {
         $this->markdown = $markdown;
-        $this->tags = isset($parserConfig['tags']) ? $parserConfig['tags'] : [];
+        $this->tags     = isset($parserConfig[ 'tags' ]) ? $parserConfig[ 'tags' ] : [ ];
     }
 
     protected function parseDocBlocks($string)
     {
-        foreach ($this->tags as $tag => $replacement)
+        foreach ( $this->tags as $tag => $replacement )
         {
             $string = preg_replace('/\<\!---\+\s' . $tag . '\s\+--\>/', "\n$replacement\n", $string);
         }
@@ -46,8 +47,8 @@ class Parser
     public function parse($string)
     {
         $rendered = $this->markdown->render($string);
-        $parsed = $this->parseDocBlocks($rendered);
+        $parsed   = $this->parseDocBlocks($rendered);
+
         return $parsed;
     }
-}/*
-*/
+}

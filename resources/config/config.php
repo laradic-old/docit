@@ -3,7 +3,7 @@ return array(
     'site_name'               => 'DocIt',
     'base_route'              => 'doc',
     'projects_path'           => 'docs',
-    'default_project'         => 'blade-extensions',
+    'default_project'         => 'themes',
     'default_page_attributes' => array(
         'layout'            => 'default',
         'code_color_scheme' => 'zenburn',
@@ -19,6 +19,12 @@ return array(
     'disqus'                  => array(
         'enabled'   => true,
         'shortname' => 'docit',
+    ),
+    'phpunit' => array(
+        'stubs' => array(
+            'class' => base_path('extensions/laradic/docit/resources/stubs/class.twig'),
+            'index' => base_path('extensions/laradic/docit/resources/stubs/index.twig')
+        )
     ),
     'parser'                  => array(
         /* Tags can be added in the markdown file like:

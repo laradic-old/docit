@@ -35,13 +35,12 @@ class GithubController extends BaseController
     protected $githubSync;
 
     /**
-     * @var \Laradic\Docit\ProjectFactory
+     * @var \Laradic\Docit\Projects\ProjectFactory
      */
     protected $projects;
 
-    function __construct(GitHubManager $github, GithubProjectSynchronizer $githubSync, ProjectFactory $projects)
+    function __construct(GithubProjectSynchronizer $githubSync, ProjectFactory $projects)
     {
-        $this->github     = $github;
         $this->githubSync = $githubSync;
         $this->projects   = $projects;
     }

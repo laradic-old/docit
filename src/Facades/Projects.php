@@ -25,6 +25,6 @@ class Projects extends Facade
      */
     protected static function getFacadeAccessor()
     {
-        return 'Laradic\Docit\Contracts\ProjectFactory';
+        return 'docit.projects';
     }
 }

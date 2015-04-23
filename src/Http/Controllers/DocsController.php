@@ -56,4 +56,9 @@ class DocsController extends Controller
 
         return View::make('laradic/docit::page-layouts.' . $layout)->with($attributes);
     }
+
+    public function phpdoc()
+    {
+
+    }
 }

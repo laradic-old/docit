@@ -1,23 +1,47 @@
-<?php namespace Laradic\Docit;
+<?php
+/**
+ * Part of the Robin Radic's PHP packages.
+ *
+ * MIT License and copyright information bundled with this package
+ * in the LICENSE file or visit http://radic.mit-license.com
+ */
+namespace Laradic\Docit;
 
 use App;
-use Illuminate\Contracts\Foundation\Application;
-use Laradic\Config\Traits\ConfigProviderTrait;
+use Illuminate\Foundation\Application;
 use Laradic\Docit\Projects\ProjectFactory;
 use Laradic\Support\ServiceProvider;
-use Laradic\Themes\Traits\ThemeProviderTrait;
 
+/**
+ * This is the DocitServiceProvider class.
+ *
+ * @package        Laradic\Docit
+ * @version        1.0.0
+ * @author         Robin Radic
+ * @license        MIT License
+ * @copyright      2015, Robin Radic
+ * @link           https://github.com/robinradic
+ */
 class DocitServiceProvider extends ServiceProvider
 {
-    use ThemeProviderTrait, ConfigProviderTrait;
+    /** @inheritdoc */
+    protected $providers = [
+        'Laradic\Themes\ThemeServiceProvider',
+        'Laradic\Docit\Providers\RouteServiceProvider'
+    ];
 
+    public function provides()
+    {
+        return ['docit.parser', 'docit.projects', 'docit.github.sync'];
+    }
+
+    /** @inheritdoc */
     public function boot()
     {
         /** @var \Illuminate\Foundation\Application $app */
         $app = parent::boot();
 
-        # Theme package publisher
-        $this->addPackagePublisher('laradic/docit', __DIR__ . '/../resources/theme');
+        $this->handleNavigation();
     }
 
     /** @inheritdoc */
@@ -25,61 +49,88 @@ class DocitServiceProvider extends ServiceProvider
     {
         /** @var \Illuminate\Foundation\Application $app */
         $app = parent::register();
+        $config = $app->make('config')->get('laradic/docit::config');
 
-        $this->addConfigComponent('laradic/docit', 'laradic/docit', realpath(__DIR__ . '/../resources/config'));
+        $this->registerProjects($config);
+        $this->registerParser($config);
+        $this->registerGithub($config);
 
-        $config = $this->app['config']->get('laradic/docit::config');
 
-        $app->singleton('docit.parser', function(Application $app) use ($config){
-            return new Parser($app->make('markdown'), $config['parser']);
-        });
-
-        $this->app->register('Laradic\Themes\ThemeServiceProvider');
-        $this->app->register('Laradic\Docit\Providers\RouteServiceProvider');
-        $this->app->singleton('Laradic\Docit\Contracts\ProjectFactory', function ($app) use ($config)
+        if ( $config[ 'console' ] )
         {
-            return new ProjectFactory($app['url'], $config);
-        });
-        $this->alias('Projects', 'Laradic\Docit\Facades\Projects');
-
-        # Optionals
-        if ( $config['github']['enabled'] )
-        {
-            $this->registerGithub();
-        }
-
-        if ( $config['console'] )
-        {
-            $this->app->register('Laradic\Docit\Providers\ConsoleServiceProvider');
-        }
-
-        # Navigation
-        $nav = $app->make('navigation');
-        $nav->add('docit.header-left', 'Docit header left');
-        $nav->add('docit.header-left.projects', 'Projects', 'docit.header-left');
-
-        $projects = $app->make('Laradic\Docit\Contracts\ProjectFactory')->all(true);
-        foreach ($projects as $project)
-        {
-            $nav->add(
-                'docit.header-left.projects.' . $project['slug'],
-                $project['title'],
-                'docit.header-left.projects',
-                $project['url']
-            );
+            $app->register('Laradic\Docit\Providers\ConsoleServiceProvider');
         }
     }
 
-    protected function registerGithub()
+    protected function registerProjects($config)
     {
-        $this->app->register('GrahamCampbell\GitHub\GitHubServiceProvider');
+        /** @var \Illuminate\Foundation\Application $app */
+        $app = $this->app;
 
-        $this->app->bind('Laradic\Docit\Github\GithubProjectSynchronizer', function (Application $app)
+        $app->singleton('docit.projects', function (Application $app) use ($config)
+        {
+            return new ProjectFactory($app[ 'url' ], $config);
+        });
+        $app->bind('Laradic\Docit\Contracts\ProjectFactory', 'docit.projects');
+        #$this->alias('docit.projects', 'Laradic\Docit\Contracts\ProjectFactory');
+
+        $this->app->booting(function ()
+        {
+            $this->alias('Projects', 'Laradic\Docit\Facades\Projects');
+        });
+    }
+
+    protected function registerParser($config)
+    {
+        /** @var \Illuminate\Foundation\Application $app */
+        $app = $this->app;
+
+        $app->singleton('docit.parser', function (Application $app) use ($config)
+        {
+            return new Parser($app->make('markdown'), $config[ 'parser' ]);
+        });
+    }
+
+    protected function registerGithub($config)
+    {
+        /** @var \Illuminate\Foundation\Application $app */
+        $app = $this->app;
+
+        if ( ! $config[ 'github' ][ 'enabled' ] )
+        {
+            return;
+        }
+
+        $app->register('GrahamCampbell\GitHub\GitHubServiceProvider');
+
+        $app->bind('docit.github.sync', function (Application $app)
         {
             return new \Laradic\Docit\Github\GithubProjectSynchronizer(
                 $gh = $app->make('GrahamCampbell\GitHub\GitHubManager'),
-                $pf = $app->make('Laradic\Docit\Contracts\ProjectFactory')
+                $pf = $app->make('docit.projects')
             );
         });
+        $app->bind('Laradic\Docit\Contracts\ProjectSynchronizer', 'docit.github.sync');
+    }
+
+    protected function handleNavigation()
+    {
+        /** @var \Illuminate\Foundation\Application $app */
+        $app = $this->app;
+
+        $projects = $app->make('docit.projects')->all(true);
+
+        $navigation = $app->make('navigation');
+        $navigation->add('docit.header-left', 'Docit header left');
+        $navigation->add('docit.header-left.projects', 'Projects', 'docit.header-left');
+        foreach ( $projects as $project )
+        {
+            $navigation->add(
+                'docit.header-left.projects.' . $project[ 'slug' ],
+                $project[ 'title' ],
+                'docit.header-left.projects',
+                $project[ 'url' ]
+            );
+        }
     }
 }

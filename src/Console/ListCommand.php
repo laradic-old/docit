@@ -9,21 +9,12 @@ use Laradic\Support\Str;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
-class ListCommand extends AbstractConsoleCommand
+class ListCommand extends BaseCommand
 {
 
-    protected $name = 'docs:list';
+    protected $name = 'docit:list';
 
-    protected $description = 'Command description.';
-
-    /** @var \Laradic\Docit\ProjectFactory */
-    protected $projects;
-
-    public function __construct(Application $app)
-    {
-        parent::__construct();
-        $this->projects = $app->make('Laradic\Docit\Contracts\ProjectFactory');
-    }
+    protected $description = 'List all DocIt projects.';
 
     public function fire()
     {
@@ -34,7 +25,7 @@ class ListCommand extends AbstractConsoleCommand
             $p              = $this->projects->make($project['slug']);
             $defaultVersion = $p->getDefaultVersion();
             $versions       = Arr::replaceValue($p->getSortedVersions(), $defaultVersion, $this->colorize(['cyan', 'bold'], $defaultVersion));
-            $github         = isset($project['github']) && $project['github']['enabled'] == true ? $project['github']['username'] . '/' . $project['github']['repository'] : '-';
+            $github         = isset($project['github']) && $project['github']['enabled'] == true ? $project['github']['username'] . '/' . $project['github']['repository'] : $this->style(['red', 'bold'], 'na');
             $path           = Str::remove($project['path'], public_path() . '/');
 
             $rows[] = [$project['title'], $project['slug'], $github, join(', ', $versions), $path];
