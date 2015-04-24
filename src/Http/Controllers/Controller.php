@@ -33,7 +33,7 @@ class Controller extends BaseController
      */
     protected $events;
 
-    function __construct(ProjectFactory $projects, Dispatcher $events)
+    public function __construct(ProjectFactory $projects, Dispatcher $events)
     {
         $this->projects = $projects;
         $this->events   = $events;

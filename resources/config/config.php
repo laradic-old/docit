@@ -18,15 +18,15 @@ return array(
     ),
     'disqus'                  => array(
         'enabled'   => true,
-        'shortname' => 'docit',
+        'shortname' => 'docit'
     ),
-    'phpunit' => array(
+    'phpdoc' => array(
         'stubs' => array(
             'class' => base_path('extensions/laradic/docit/resources/stubs/class.twig'),
             'index' => base_path('extensions/laradic/docit/resources/stubs/index.twig')
         )
     ),
-    'parser'                  => array(
+    'markdown'                  => array(
         /* Tags can be added in the markdown file like:
          * <!---+ col-md-6 +-->
          * <!---+ /col-md-6 +-->

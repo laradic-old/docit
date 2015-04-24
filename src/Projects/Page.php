@@ -117,7 +117,7 @@ class Page implements ArrayAccess
     /** @return string */
     public function parse($str)
     {
-        return app('docit.parser')->parse($str);
+        return app('docit.parsers.markdown')->parse($str);
     }
 
     public function getVersion()

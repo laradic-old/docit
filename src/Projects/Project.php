@@ -7,8 +7,11 @@ namespace Laradic\Docit\Projects;
 
 use Exception;
 use File;
+use Laradic\Docit\Pages\MarkdownPage;
+use Laradic\Docit\Pages\PhpdocPage;
 use Laradic\Support\Arr;
 use Laradic\Support\Str;
+use Laradic\Support\String;
 use Naneau\SemVer\Sort;
 use Stringy\Stringy;
 use Symfony\Component\Yaml\Yaml;
@@ -115,9 +118,9 @@ class Project implements \ArrayAccess
         return $lastVersion;
     }
 
-    public function getPage($path, $version = null)
+    public function getPage($pagePath, $version = null)
     {
-        if ( $version == null )
+        if ( $version === null )
         {
             $version = $this->getDefaultVersion();
         }
@@ -127,7 +130,18 @@ class Project implements \ArrayAccess
             throw new Exception("Version $version does not exist for this project");
         }
 
-        return new Page($this, $version, $path);
+
+        if(isset($this['phpdoc']) and $this['phpdoc']['enabled'] === true and String::startsWith($pagePath, $this['phpdoc']['dir']))
+        {
+            if(String::startsWith($pagePath, $this['phpdoc']['dir']))
+            {
+                return new PhpdocPage($this, $version, $pagePath);
+            }
+        }
+        else
+        {
+            return new MarkdownPage($this, $version, $pagePath);
+        }
     }
 
 

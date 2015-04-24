@@ -89,7 +89,7 @@
 
 @stop
 
-@section('scripts.boot')
+@section('scripts.custom')
     <script>
         (function(){
             var packadic = (window.packadic = window.packadic || {});

@@ -9,8 +9,10 @@ namespace Laradic\Docit;
 
 use App;
 use Illuminate\Foundation\Application;
+use Laradic\Docit\Parsers\MarkdownParser;
 use Laradic\Docit\Projects\ProjectFactory;
 use Laradic\Support\ServiceProvider;
+
 
 /**
  * This is the DocitServiceProvider class.
@@ -24,6 +26,7 @@ use Laradic\Support\ServiceProvider;
  */
 class DocitServiceProvider extends ServiceProvider
 {
+
     /** @inheritdoc */
     protected $providers = [
         'Laradic\Themes\ThemeServiceProvider',
@@ -32,7 +35,7 @@ class DocitServiceProvider extends ServiceProvider
 
     public function provides()
     {
-        return ['docit.parser', 'docit.projects', 'docit.github.sync'];
+        return [ 'docit.parser', 'docit.projects', 'docit.github.sync' ];
     }
 
     /** @inheritdoc */
@@ -48,11 +51,11 @@ class DocitServiceProvider extends ServiceProvider
     public function register()
     {
         /** @var \Illuminate\Foundation\Application $app */
-        $app = parent::register();
+        $app    = parent::register();
         $config = $app->make('config')->get('laradic/docit::config');
 
         $this->registerProjects($config);
-        $this->registerParser($config);
+        $this->registerParsers($config);
         $this->registerGithub($config);
 
 
@@ -80,14 +83,15 @@ class DocitServiceProvider extends ServiceProvider
         });
     }
 
-    protected function registerParser($config)
+    protected function registerParsers($config)
     {
         /** @var \Illuminate\Foundation\Application $app */
         $app = $this->app;
 
-        $app->singleton('docit.parser', function (Application $app) use ($config)
+        $app->bind('docit.parsers.phpdoc', 'Laradic\Docit\Parsers\PhpdocParser');
+        $app->bind('docit.parsers.markdown', function (Application $app)
         {
-            return new Parser($app->make('markdown'), $config[ 'parser' ]);
+            return new MarkdownParser($app->make('markdown'), $app->make('config')->get('laradic/docit::markdown'));
         });
     }
 

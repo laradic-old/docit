@@ -10,6 +10,7 @@ use Illuminate\Routing\UrlGenerator;
 use Laradic\Docit\Contracts\ProjectFactory as ProjectFactoryContract;
 use Laradic\Support\Arr;
 use Laradic\Support\Str;
+use Laradic\Support\Traits\DotArrayAccessTrait;
 
 /**
  * Class ProjectFactory
@@ -22,6 +23,12 @@ use Laradic\Support\Str;
  */
 class ProjectFactory implements ProjectFactoryContract
 {
+    use DotArrayAccessTrait;
+
+    protected function getArrayAccessor()
+    {
+        return 'config';
+    }
 
     /**
      * @var Project[]
@@ -48,6 +55,9 @@ class ProjectFactory implements ProjectFactoryContract
 
     /**
      * Instanciates the class
+     *
+     * @param \Illuminate\Routing\UrlGenerator $url
+     * @param array                            $config
      */
     public function __construct(UrlGenerator $url, array $config)
     {
@@ -112,7 +122,6 @@ class ProjectFactory implements ProjectFactoryContract
     public function make($slug)
     {
         $projectConfig = $this->projects[$slug];
-        #Debugger::log($projectConfig);
 
         return new Project($this, $slug, $projectConfig);
     }
@@ -120,7 +129,6 @@ class ProjectFactory implements ProjectFactoryContract
     public function path()
     {
         return $this->projectsFilePath;
-        #return Themes::getActive()->getPackagesPath();
     }
 
     public function url($project = null, $version = null, $page = null)
@@ -159,7 +167,5 @@ class ProjectFactory implements ProjectFactoryContract
     {
         return $this->config;
     }
-
-
 
 }

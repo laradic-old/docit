@@ -2,6 +2,8 @@
 
 Route::get('/', ['as' => 'docit.home', 'uses' => 'DocsController@index']);
 
+Route::get('/phpdoc', ['as' => 'docit.phpdoc', 'uses' => 'DocsController@phpdocApi']);
+
 
 if(Config::get('laradic/docit::github.enabled') === true)
 {
@@ -24,6 +26,6 @@ if(Config::get('laradic/docit::github.enabled') === true)
 }
 
 
-Route::get('{project}/{version?}/{page?}', [
+Route::get('{project}/{version?}/{pagePath?}', [
     'as' => 'docit.project', 'uses' => 'DocsController@show'
 ])->where('page', '(.*)');

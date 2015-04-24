@@ -37,6 +37,10 @@ class Menu implements Jsonable, Arrayable
 
     /**
      * Instanciates the class
+     *
+     * @param \Laradic\Docit\Projects\Project $project
+     * @param                                 $version
+     * @throws \Exception
      */
     public function __construct(Project $project, $version)
     {
@@ -53,6 +57,15 @@ class Menu implements Jsonable, Arrayable
         $this->menu = $this->parse($this->raw);
     }
 
+    protected function parseConfig($str)
+    {
+        foreach(array_dot($this->project->getConfig()) as $key => $value)
+        {
+            $str = str_replace('${project.' . $key . '}', $value, $str);
+        }
+        return $str;
+    }
+
     protected function parse($yaml)
     {
         $array = Yaml::parse($yaml);
@@ -65,6 +78,9 @@ class Menu implements Jsonable, Arrayable
         $menu = [];
         foreach ($items as $key => $val)
         {
+            $key = $this->parseConfig($key);
+            $val = $this->parseConfig($val);
+
             # Key = title, val = relative page path
             if ( is_string($key) && is_string($val) )
             {

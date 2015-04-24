@@ -2,7 +2,7 @@
 /**
  * Part of the Laradic packages.
  */
-namespace Laradic\Docit;
+namespace Laradic\Docit\Parsers;
 
 use Radic\BladeExtensions\Contracts\MarkdownRenderer;
 
@@ -15,7 +15,7 @@ use Radic\BladeExtensions\Contracts\MarkdownRenderer;
  * @copyright   2011-2015, Robin Radic
  * @link        http://radic.mit-license.org
  */
-class Parser
+class MarkdownParser
 {
 
     protected $markdown;
