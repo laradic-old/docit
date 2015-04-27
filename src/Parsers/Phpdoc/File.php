@@ -64,13 +64,13 @@ class File implements ArrayAccess
         $this->isAbstract = $a[ 'abstract' ] === "true";
         $this->namespace  = $a[ 'namespace' ];
         $this->package    = $a[ 'package' ];
-        if($this->name == 'ThemeFactory'){
+        if ( $this->name == 'ThemeFactory' )
+        {
             $aaa = 'aa';
         }
         $this->methods    = $this->parseMethods($o[ 'method' ]);
         $this->properties = $this->parseProperties($o[ 'property' ]);
         $this->source     = $f[ 'source' ];
-
     }
 
     protected function parseGlobal($p)
@@ -94,11 +94,11 @@ class File implements ArrayAccess
         foreach ( $properties as $p )
         {
             $parsed[ ] = array_replace($this->parseGlobal($p), [
-                'default' => $p[ 'default' ],
-                'description' => $p['docblock']['description'],
-                'longDescription' => $p['docblock']['long-description'],
-                'type' => $p[ 'docblock' ]['tag']['type'],
-                'docblock'   => $this->parseDocblock($p[ 'docblock' ])
+                'default'         => $p[ 'default' ],
+                'description'     => $p[ 'docblock' ][ 'description' ],
+                'longDescription' => $p[ 'docblock' ][ 'long-description' ],
+                'type'            => $p[ 'docblock' ][ 'tag' ][ 'type' ],
+                'docblock'        => $this->parseDocblock($p[ 'docblock' ])
             ]);
         }
 
@@ -107,30 +107,66 @@ class File implements ArrayAccess
 
     protected function parseMethods($methods)
     {
-        $parsed = [ ];
+        $parsed  = [ ];
         foreach ( $methods as $p )
         {
-            $g = $this->parseGlobal($p);
-            $db = $this->parseDocblock($p[ 'docblock' ]);
-            $args = [ ];
+            $params = [ ];
             $return = null;
-            foreach($db['tags'] as $tag){
-                if($tag['name'] === 'param'){
-                    $args[] = $tag;
-                } elseif($tag['name'] === 'return') {
-                    $return = $tag;
+            if(!isset($p['argument']['name']))
+            {
+                foreach ( $p[ 'argument' ] as $arg )
+                {
+                    $params[ $arg[ 'name' ] ] = $arg[ 'type' ];
                 }
             }
-
-            $parsed[ ] = array_replace($g, [
-                'docblock'   => $this->parseDocblock($p[ 'docblock' ]),
-                'isAbstract' => $p[ 'abstract' ] === 'true',
-                'arguments'  => $args,
+            if ( isset($p[ 'docblock' ][ 'tag' ][ 'type' ]) )
+            {
+                $return = [
+                    'type' => $p[ 'docblock' ][ 'tag' ]['@attributes']['type'],
+                    'description' => $p[ 'docblock' ][ 'tag' ]['@attributes']['description']
+                ];
+            }
+            else
+            {
+                foreach ( $p[ 'docblock' ][ 'tag' ] as $tag )
+                {
+                    if($tag['@attributes']['name'] === 'param' )
+                    {
+                        $params[$tag['@attributes']['variable']] = $tag['@attributes'];
+                    }
+                    elseif($tag['@attributes']['name'] === 'return')
+                    {
+                        $return = ['type' => $tag['@attributes']['type'], 'description' => $tag['@attributes']['description']];
+                    }
+                }
+            }
+            $parsed[ ] = array_replace([
+                'name'     => $p[ 'name' ],
+                'fullName' => $p[ 'full_name' ],
+                'description' => $p['docblock']['description'],
+                'longDescription' => $p['docblock']['long-description'],
+                'params' => $params,
                 'return' => $return
-            ]);
+            ],
+                $this->parseMethodAttributes($p[ '@attributes' ])
+            );
+
+            $aa = 'nn';
         }
 
         return $parsed;
+    }
+
+    protected function parseMethodAttributes($a)
+    {
+        return [
+            'isStatic'   => $a[ 'static' ] === "true",
+            'isFinal'    => $a[ 'final' ] === "true",
+            'isAbstract' => $a[ 'abstract' ] === "true",
+            'visibility' => $a[ 'visibility' ],
+            'namespace'  => $a[ 'namespace' ],
+            'package'    => $a[ 'package' ]
+        ];
     }
 
     protected function parseDocblock($docblock)

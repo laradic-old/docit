@@ -19,9 +19,9 @@
             <h3 class="box-heading">
                 {{ $method['name'] }}
                 <span class="font-size-12">
-                    @if($method['arguments'])
+                    @if($method['params'])
                         (
-                        @foreach($method['arguments'] as $tag)
+                        @foreach($method['params'] as $tag)
                             {{ $tag['variable'] }}
                             @if(!$loop->last)
                                 ,
@@ -60,24 +60,24 @@
 
                     <p><strong>Description:</strong></p>
 
-                    @if($method['docblock']['description'])
-                        <p>{{ $method['docblock']['description'] }}</p>
+                    @if($method['description'])
+                        <p>{{ $method['description'] }}</p>
                     @endif
 
                 </div>
                 <div class="col-md-6">
 
-                    @if($method['arguments'])
+                    @if($method['params'])
                         <table class="table table-hover table-condensed table-light table-striped table-bordered table-small">
                             <thead>
                             <tr>
-                                <th>Argument</th>
+                                <th>Parameter</th>
                                 <th>Type</th>
                                 <th>Description</th>
                             </tr>
                             </thead>
                             <tbody>
-                            @foreach($method['arguments'] as $tag)
+                            @foreach($method['params'] as $tag)
 
                                 <tr>
                                     <td>{{ $tag['variable'] }}</td>
