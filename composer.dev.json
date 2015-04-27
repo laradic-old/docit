@@ -22,13 +22,23 @@
     "prefer-stable": true,
     "require": {
         "php": ">=5.4.0",
-        "illuminate/support": "5.0.*",
+        "laradic/support": "dev-master",
+        "laradic/themes": "dev-develop",
+        "laradic/pakadic": "dev-master",
         "league/oauth2-client": "0.10.*",
+        "laravel/framework": "~5.0",
         "naneau/semver": "0.0.7.*",
         "symfony/dom-crawler": "~2.6",
         "graham-campbell/github": "~2.0",
         "symfony/yaml": "~2.6",
-        "phpdocumentor/phpdocumentor": "~2.8"
+        "phpdocumentor/phpdocumentor": "~2.8",
+        "evert/phpdoc-md": "0.1.1"
+    },
+    "suggest": {
+        "laradic/extensions": "dev-master"
+    },
+    "require-dev": {
+        "laradic/dev": "dev-master"
     },
     "scripts": {
     },

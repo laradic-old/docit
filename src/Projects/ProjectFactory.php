@@ -5,11 +5,12 @@
 namespace Laradic\Docit\Projects;
 
 #use Debugger;
+use ArrayAccess;
 use File;
 use Illuminate\Routing\UrlGenerator;
 use Laradic\Docit\Contracts\ProjectFactory as ProjectFactoryContract;
-use Laradic\Support\Arr;
-use Laradic\Support\Str;
+use Laradic\Support\Arrays;
+use Laradic\Support\String;
 use Laradic\Support\Traits\DotArrayAccessTrait;
 
 /**
@@ -21,7 +22,7 @@ use Laradic\Support\Traits\DotArrayAccessTrait;
  * @copyright   2011-2015, Robin Radic
  * @link        http://radic.mit-license.org
  */
-class ProjectFactory implements ProjectFactoryContract
+class ProjectFactory implements ProjectFactoryContract, ArrayAccess
 {
     use DotArrayAccessTrait;
 
@@ -74,13 +75,13 @@ class ProjectFactory implements ProjectFactoryContract
         $projectsConfigFilePaths = File::glob($projectsPath . '/*/project.php');
         foreach ($projectsConfigFilePaths as $configFilePath)
         {
-            $slug = Str::remove($configFilePath, $projectsPath);
-            $slug = Str::remove($slug, 'project.php');
-            $slug = Str::remove($slug, '/');
+            $slug = String::remove($configFilePath, $projectsPath);
+            $slug = String::remove($slug, 'project.php');
+            $slug = String::remove($slug, '/');
 
             $projects[$slug] = array_merge(require $configFilePath, [
                 'slug' => $slug,
-                'path' => Str::remove($configFilePath, '/project.php'),
+                'path' => String::remove($configFilePath, '/project.php'),
                 'url'  => $this->url($slug)
             ]);
 
@@ -101,7 +102,7 @@ class ProjectFactory implements ProjectFactoryContract
      */
     public function all($bySlug = false)
     {
-        return $bySlug === true ? $this->projects : Arr::values($this->projects);
+        return $bySlug === true ? $this->projects : Arrays::values($this->projects);
     }
 
     public function has($slug)
@@ -116,7 +117,7 @@ class ProjectFactory implements ProjectFactoryContract
 
     public function slugs()
     {
-        return Arr::keys($this->projects);
+        return Arrays::keys($this->projects);
     }
 
     public function make($slug)

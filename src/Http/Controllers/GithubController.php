@@ -7,11 +7,11 @@ namespace Laradic\Docit\Http\Controllers;
 
 
 use GitHub;
-use GrahamCampbell\GitHub\GitHubManager;
 use Illuminate\Routing\Controller as BaseController;
 use Input;
+use Laradic\Docit\Contracts\DocitLog;
 use Laradic\Docit\Contracts\ProjectFactory;
-use Laradic\Docit\Github\GithubProjectSynchronizer;
+use Laradic\Docit\Contracts\ProjectSynchronizer;
 use League\OAuth2\Client\Provider\Github as GithubProvider;
 use Log;
 use Request;
@@ -32,48 +32,51 @@ class GithubController extends BaseController
 
     protected $github;
 
+    /**
+     * @var \Laradic\Docit\Github\GithubProjectSynchronizer
+     */
     protected $githubSync;
+
+    protected $log;
 
     /**
      * @var \Laradic\Docit\Projects\ProjectFactory
      */
     protected $projects;
 
-    function __construct(GithubProjectSynchronizer $githubSync, ProjectFactory $projects)
+    public function __construct(ProjectSynchronizer $githubSync, ProjectFactory $projects, DocitLog $log)
     {
         $this->githubSync = $githubSync;
         $this->projects   = $projects;
+        $this->log        = $log;
     }
 
     public function sync($project)
     {
         $this->githubSync->sync($project);
-        $log = $this->githubSync->getLogEntries(true);
-        VarDumper::dump($log);
-    }
-
-    public function getAccessCode()
-    {
+        $logEntries = $this->log->getLogEntries(true);
+        VarDumper::dump($logEntries);
     }
 
     protected function getProvider($projectSlug)
     {
         $project = $this->projects->get($projectSlug);
-        if(!$project->isGithub())
+        if ( ! $project->isGithub() )
         {
             throw new \Exception("Project [$projectSlug] is not a github project");
         }
+
         return new GithubProvider([
-            'clientId'     => $project['github.clientId'],
-            'clientSecret' => $project['github.clientSecret'],
+            'clientId'     => $project[ 'github.clientId' ],
+            'clientSecret' => $project[ 'github.clientSecret' ],
             'redirectUri'  => \Config::get('laradic/docit::github.redirectUri'),
-            'scopes'       => ['email', '...', '...'],
+            'scopes'       => [ 'email', '...', '...' ],
         ]);
     }
 
     public function webhook($type)
     {
-        $types = ['push'];
+        $types = [ 'push' ];
         if ( ! in_array($type, $types) )
         {
             return Response::make('', 403);
@@ -87,18 +90,21 @@ class GithubController extends BaseController
         ];
         $payload = Input::all();
 
-        foreach ($this->projects->all() as $project)
+
+$i = 0;
+        foreach ( $this->projects->all() as $project )
         {
-            if ( isset($project['github']) && isset($project['github']['enabled']) && $project['github']['enabled'] == true )
+            $i++;
+            if ( isset($project[ 'github' ][ 'enabled' ]) and $project[ 'github' ][ 'enabled' ] == true )
             {
-                if ( $project['github']['username'] . '/' . $project['github']['repository'] === strtolower($payload['repository']['full_name']) )
+                if ( $project[ 'github' ][ 'username' ] . '/' . $project[ 'github' ][ 'repository' ] === strtolower($payload[ 'repository' ][ 'full_name' ]) )
                 {
-                    $hash = hash_hmac('sha1', file_get_contents("php://input"), $project['github']['webhook_secret']);
-                    if ( $headers['signature'] === "sha1=$hash" )
+                    $hash = hash_hmac('sha1', file_get_contents("php://input"), $project[ 'github' ][ 'webhook_secret' ]);
+                    if ( $headers[ 'signature' ] === "sha1=$hash" )
                     {
-                        Log::info('github webhook received push event. Syncing ' . $project['slug']);
-                        $this->githubSync->sync($project['slug']);
-                        Log::info('github webhook received push event. Synced ' . $project['slug'], $this->githubSync->getLogEntries(true));
+                        $this->log->info('github webhook received push event. Syncing ' . $project[ 'slug' ]);
+                        $this->githubSync->sync($project[ 'slug' ]);
+                        $this->log->info('github webhook received push event. Synced ' . $project[ 'slug' ]);
 
                         return Response::make();
                     }

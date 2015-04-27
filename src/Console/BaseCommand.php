@@ -1,9 +1,9 @@
 <?php namespace Laradic\Docit\Console;
 
 use Laradic\Docit\Contracts\ProjectFactory;
-use Laradic\Support\AbstractConsoleCommand;
+use Laradic\Console\Command;
 
-class BaseCommand extends AbstractConsoleCommand
+abstract class BaseCommand extends Command
 {
 
     /** @var \Laradic\Docit\Projects\ProjectFactory */

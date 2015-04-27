@@ -10,13 +10,13 @@ namespace Laradic\Docit\Github;
 use Cache;
 use File;
 use GrahamCampbell\GitHub\GitHubManager;
+use Laradic\Docit\Contracts\DocitLog;
 use Laradic\Docit\Contracts\ProjectSynchronizer;
 use Laradic\Docit\Projects\Project;
 use Laradic\Docit\Projects\ProjectFactory;
-use Laradic\Support\Arr;
+use Laradic\Support\Arrays;
 use Laradic\Support\Path;
-use Laradic\Support\Str;
-use Monolog\Handler\TestHandler;
+use Laradic\Support\String;
 use Monolog\Logger;
 use Naneau\SemVer\Compare;
 use Naneau\SemVer\Parser;
@@ -47,12 +47,13 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
      *
      * @param \GrahamCampbell\GitHub\GitHubManager   $gm
      * @param \Laradic\Docit\Projects\ProjectFactory $projects
+     * @param \Laradic\Docit\Contracts\DocitLog      $log
      */
-    public function __construct(GithubManager $gm, ProjectFactory $projects)
+    public function __construct(GithubManager $gm, ProjectFactory $projects, DocitLog $log)
     {
         $this->gm       = $gm;
         $this->projects = $projects;
-        $this->log      = new Logger('github_sync_manager', [ new TestHandler() ]);
+        $this->log      = $log;
     }
 
     public function getLog()
@@ -63,37 +64,6 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
     public function setLog(Logger $log)
     {
         $this->log = $log;
-    }
-
-    /**
-     * Returns all log entries
-     *
-     * @return array Array of log entries
-     * @throws \ErrorException
-     */
-    public function getLogEntries($messageAsKeys = false)
-    {
-        //TestHandler
-        $handlers = $this->log->getHandlers();
-        foreach ( $handlers as $handler )
-        {
-            if ( $handler instanceof TestHandler )
-            {
-                if ( $messageAsKeys )
-                {
-                    $entries = [ ];
-                    foreach ( $handler->getRecords() as $entry )
-                    {
-                        $entries[ $entry[ 'message' ] ] = $entry;
-                    }
-
-                    return $entries;
-                }
-
-                return $handler->getRecords();
-            }
-        }
-        throw new \ErrorException("Could not get log entries. The logger should have a TestHandler binded.");
     }
 
     protected function resolveProject($project)
@@ -152,7 +122,7 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
 
         if ( $type === 'tag' )
         {
-            $tag    = Parser::parse(Str::remove($ref, 'v'));
+            $tag    = Parser::parse(String::remove($ref, 'v'));
             $folder = $tag->getMajor() . '.' . $tag->getMinor();
         }
 
@@ -184,12 +154,15 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
 
 
     /**
-     * @param string $ref  tag name OR branch name
-     * @param string $type [ tag | branch ]
+     * @param \Laradic\Docit\Projects\Project $project
+     * @param string                          $ref  tag name OR branch name
+     * @param string                          $type [ tag | branch ]
      */
     protected function syncRef(Project $project, $ref, $type)
     {
         $paths = $this->getPaths($project, $ref, $type);
+
+        $this->log->info("synchronizing docs for $type $ref ", [ 'project' => $project->getSlug(), "$type" => $ref, 'paths' => $paths ]);
 
         $content = new RepoContent($project[ 'github.username' ], $project[ 'github.repository' ], $this->gm);
 
@@ -199,7 +172,7 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
 
         if ( $hasDocs )
         {
-            $this->log->info("synchronizing docs for $type $ref ", [ 'project' => $project, "$type" => $ref ]);
+
 
             # parse menu and get pages to sync
             $menu            = $content->show(Path::join($paths[ 'docs' ], 'menu.yml'), $ref);
@@ -210,7 +183,7 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
             $filteredPages = [ ];
             foreach ( $unfilteredPages as $page ) # filter out pages that link to external sites
             {
-                if ( Str::startsWith($page, 'http') || Str::startsWith($page, '//') || Str::startsWith($page, 'git') )
+                if ( String::startsWith($page, 'http') || String::startsWith($page, '//') || String::startsWith($page, 'git') )
                 {
                     continue;
                 }
@@ -236,8 +209,8 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
                 $pageRaw = $content->show('/' . $path, $ref);
 
                 # transform remote directory path to local directory path
-                $dir = Str::remove($pageRaw[ 'path' ], $paths[ 'docs' ]);
-                $dir = Str::remove($dir, $pageRaw[ 'name' ]);
+                $dir = String::remove($pageRaw[ 'path' ], $paths[ 'docs' ]);
+                $dir = String::remove($dir, $pageRaw[ 'name' ]);
                 $dir = Path::canonicalize(Path::join($paths[ 'local.destination' ], $dir));
                 if ( ! File::isDirectory($dir) )
                 {
@@ -251,12 +224,44 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
             # save the menu to local
             File::put(Path::join($paths[ 'local.destination' ], 'menu.yml'), $menuContent);
 
+            # if enabled, Get phpdoc structure and save it
+            if ( isset($project[ 'phpdoc' ]) and $project[ 'phpdoc' ][ 'enabled' ] === true )
+            {
+
+                $hasStructure = $content->exists($project[ 'phpdoc' ][ 'github_xml_path' ], $ref);
+                if ( $hasStructure )
+                {
+                    $structure    = $content->show($project[ 'phpdoc' ][ 'github_xml_path' ], $ref);
+                    $structureXml = base64_decode($structure[ 'content' ]);
+                    $this->log->info('got structure', [ 'structureXml' => $structureXml ]);
+
+                    $destination    = Path::join($paths[ 'local.destination' ], $project[ 'phpdoc' ][ 'dir' ], 'structure.xml');
+                    $destinationDir = Path::getDirectory($destination);
+                    $this->log->info('writing to ' . $destination, [ 'destination ' => $destination, 'destinationDir' => $destinationDir ]);
+
+                    if ( ! File::isDirectory($destinationDir) )
+                    {
+                        $this->log->info('Destination dir does not exist. Creating it ' . $destination, [ 'destinationDir' => $destinationDir ]);
+                        File::makeDirectory($destinationDir, 0755, true);
+                    }
+                    File::put($destination, $structureXml);
+                }
+                else
+                {
+                    $this->log->error("Could not synchronize phpunit for $type $ref. Could not find structure.xml", [ 'project' => $project, "$type" => $ref, 'path' => $project[ 'phpdoc' ][ 'github_xml_path' ] ]);
+                }
+            }
+
             # set cache sha for branches, not for tags (obviously)
             if ( $type === 'branch' )
             {
                 $branchData = $this->gm->repo()->branches($project[ 'github.username' ], $project[ 'github.repository' ], $ref);
                 Cache::forever($this->getCacheKey($project, $ref), $branchData[ 'commit' ][ 'sha' ]);
             }
+        }
+        else
+        {
+            $this->log->error("Could not synchronize docs for $type $ref. Could not find docs", [ 'project' => $project, "$type" => $ref ]);
         }
     }
 
@@ -334,12 +339,12 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
             return [ ];
         }
 
-        $currentVersions = Arr::keys($project->getVersions());
+        $currentVersions = Arrays::keys($project->getVersions());
 
 
         $tagsToSync = [ ];
         $excludes   = $project[ 'github.exclude_tags' ];
-        $start      = is_string($project[ 'github.start_at_tag' ]) ? Parser::parse(Str::remove($project[ 'github.start_at_tag' ], 'v')) : false;
+        $start      = is_string($project[ 'github.start_at_tag' ]) ? Parser::parse(String::remove($project[ 'github.start_at_tag' ], 'v')) : false;
 
         $tags = $this->gm->repo()->tags($project[ 'github.username' ], $project[ 'github.repository' ]);
         foreach ( $tags as $tag )
@@ -347,7 +352,7 @@ class GithubProjectSynchronizer implements ProjectSynchronizer
             $tagVersion = $tag[ 'name' ];
             #
 
-            $tagVersionParsed = Parser::parse(Str::remove($tag[ 'name' ], 'v'));
+            $tagVersionParsed = Parser::parse(String::remove($tag[ 'name' ], 'v'));
             $tagVersionShort  = $tagVersionParsed->getMajor() . '.' . $tagVersionParsed->getMinor();
 
             if ( ($start !== false AND Compare::smallerThan(Parser::parse($tagVersionParsed), $start))

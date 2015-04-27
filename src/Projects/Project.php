@@ -9,8 +9,7 @@ use Exception;
 use File;
 use Laradic\Docit\Pages\MarkdownPage;
 use Laradic\Docit\Pages\PhpdocPage;
-use Laradic\Support\Arr;
-use Laradic\Support\Str;
+use Laradic\Support\Arrays;
 use Laradic\Support\String;
 use Naneau\SemVer\Sort;
 use Stringy\Stringy;
@@ -59,7 +58,7 @@ class Project implements \ArrayAccess
         $versions = [];
         foreach (File::directories($this->path) as $directory)
         {
-            $dirName            = Str::remove($directory, $this->path . '/');
+            $dirName            = String::remove($directory, $this->path . '/');
             $versions[$dirName] = $directory;
         }
 
@@ -68,7 +67,7 @@ class Project implements \ArrayAccess
 
     public function getVersions($excludePaths = false)
     {
-        return $excludePaths === true ? Arr::keys($this->versions) : $this->versions;
+        return $excludePaths === true ? Arrays::keys($this->versions) : $this->versions;
     }
 
     public function getSortedVersions($mode = 'desc')
@@ -85,7 +84,7 @@ class Project implements \ArrayAccess
 
         if ( $this->isGithub() && $this->hasGithubBranches() )
         {
-            $versions = Arr::without($versions, $this['github']['branches']);
+            $versions = Arrays::without($versions, $this['github']['branches']);
             $versions = array_merge($this['github']['branches'], $versions);
         }
 
@@ -112,7 +111,7 @@ class Project implements \ArrayAccess
         {
             $versions[] = $shortVersion . '.0';
         }
-        $version     = Arr::last(Sort::sort($versions))->getOriginalVersion();
+        $version     = last(Sort::sort($versions))->getOriginalVersion();
         $lastVersion = Stringy::create($version)->removeRight('.0')->__toString();
 
         return $lastVersion;

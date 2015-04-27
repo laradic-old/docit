@@ -21,18 +21,23 @@ use Laradic\Docit\Parsers\Phpdoc\File;
  */
 class PhpdocParser
 {
+
     protected $tree;
+
+    protected $tree2 = [ ];
 
     public function parse($xmlString)
     {
-        $xml = simplexml_load_string($xmlString);
-        $data = json_decode(json_encode($xml), true);
-        $filesData = [];
+        $xml       = simplexml_load_string($xmlString);
+        $data      = json_decode(json_encode($xml), true);
+        $filesData = [ ];
 
         # create file objects
         foreach ( $data[ 'file' ] as $file )
         {
-            $filesData[ ] = new File($file);
+            $file         = new File($file);
+            $filesData[ ] = $file;
+            $this->insertIntoTree($file);
         }
 
         # create the tree using the namespace we got in our files
@@ -56,6 +61,10 @@ class PhpdocParser
             $current =& $this->tree;
             foreach ( explode('\\', $file->namespace) as $part )
             {
+                if ( ! isset($part) )
+                {
+                    $a = 'a';
+                }
                 if ( ! isset($current[ $part ]) )
                 {
                     $current[ $part ] = array();
@@ -82,10 +91,31 @@ class PhpdocParser
         }
     }
 
+    protected function insertIntoTree(File $file)
+    {
+        $tree  =& $this->tree2;
+        $parts = array_merge(explode('\\', $file->namespace), [ $file->name ]);
+        foreach ( $parts as $i => $part )
+        {
+            if ( ! isset($tree[ $part ]) )
+            {
+                $tree[ $part ] = array();
+            }
+            elseif ( (count($parts) - 1) === $i  )
+            {
+                $tree[ ] = $file;
+            }
+
+            $tree =& $tree[ $part ];
+            if(count($this->tree2) > 1)
+            {
+                $a ='a';
+            }
+        }
+    }
+
     protected function getTree()
     {
         return $this->tree;
     }
-
-
 }

@@ -7,8 +7,8 @@
  */
 namespace Laradic\Docit\Parsers\Phpdoc;
 
-use Illuminate\Support\Arr;
-use Underscore\Types\Arrays;
+use ArrayAccess;
+use Laradic\Support\Traits\DotArrayAccessTrait;
 
 /**
  * This is the File class.
@@ -20,18 +20,17 @@ use Underscore\Types\Arrays;
  * @copyright      2015, Robin Radic
  * @link           https://github.com/robinradic
  */
-class File
+class File implements ArrayAccess
 {
 
-    public $path, $dochead, $docblock, $type, $source;
+    use DotArrayAccessTrait;
 
-    public $object;
+    protected function getArrayAccessor()
+    {
+        return 'attributes';
+    }
 
-    public $name, $namespace, $isFinal, $isAbstract, $extends, $fullName;
-
-    public $methods, $properties;
-
-    protected $raw;
+    protected $attributes = [ ];
 
 
     public function __construct($f)
@@ -65,15 +64,19 @@ class File
         $this->isAbstract = $a[ 'abstract' ] === "true";
         $this->namespace  = $a[ 'namespace' ];
         $this->package    = $a[ 'package' ];
-
+        if($this->name == 'ThemeFactory'){
+            $aaa = 'aa';
+        }
         $this->methods    = $this->parseMethods($o[ 'method' ]);
-        $this->properties = $this->parseMethods($o[ 'property' ]);
+        $this->properties = $this->parseProperties($o[ 'property' ]);
         $this->source     = $f[ 'source' ];
+
     }
 
     protected function parseGlobal($p)
     {
-        $a = $p['@attributes'];
+        $a = $p[ '@attributes' ];
+
         return [
             'name'       => $p[ 'name' ],
             'fullName'   => $p[ 'full_name' ],
@@ -81,9 +84,7 @@ class File
             'isFinal'    => $a[ 'final' ] === "true",
             'visibility' => $a[ 'visibility' ],
             'namespace'  => $a[ 'namespace' ],
-            'package'    => $a[ 'package' ],
-            'docblock'   => $this->parseDocblock($p[ 'docblock' ])
-
+            'package'    => $a[ 'package' ]
         ];
     }
 
@@ -94,6 +95,10 @@ class File
         {
             $parsed[ ] = array_replace($this->parseGlobal($p), [
                 'default' => $p[ 'default' ],
+                'description' => $p['docblock']['description'],
+                'longDescription' => $p['docblock']['long-description'],
+                'type' => $p[ 'docblock' ]['tag']['type'],
+                'docblock'   => $this->parseDocblock($p[ 'docblock' ])
             ]);
         }
 
@@ -105,20 +110,23 @@ class File
         $parsed = [ ];
         foreach ( $methods as $p )
         {
-            $args = [];
-            if ( isset($p[ 'argument' ]) )
-            {
-                foreach ( $p[ 'argument' ] as $a )
-                {
-                    if(is_array($a)){
-                        unset($a['@attributes']);
-                        $args[] = $a;
-                    }
+            $g = $this->parseGlobal($p);
+            $db = $this->parseDocblock($p[ 'docblock' ]);
+            $args = [ ];
+            $return = null;
+            foreach($db['tags'] as $tag){
+                if($tag['name'] === 'param'){
+                    $args[] = $tag;
+                } elseif($tag['name'] === 'return') {
+                    $return = $tag;
                 }
             }
-            $parsed[ ] = array_replace($this->parseGlobal($p), [
+
+            $parsed[ ] = array_replace($g, [
+                'docblock'   => $this->parseDocblock($p[ 'docblock' ]),
                 'isAbstract' => $p[ 'abstract' ] === 'true',
-                'arguments' => $args
+                'arguments'  => $args,
+                'return' => $return
             ]);
         }
 
@@ -136,8 +144,7 @@ class File
 
         foreach ( $docblock[ 'tag' ] as $tag )
         {
-                $parsed['tags'][] = $tag['@attributes'];
-
+            $parsed[ 'tags' ][ ] = $tag[ '@attributes' ];
         }
 
         return $parsed;
@@ -151,5 +158,28 @@ class File
     public function getSource()
     {
         return gzuncompress(base64_decode($this->source));
+    }
+
+    /**
+     * Dynamically access container services.
+     *
+     * @param  string $key
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        return $this[ $key ];
+    }
+
+    /**
+     * Dynamically set container services.
+     *
+     * @param  string $key
+     * @param  mixed  $value
+     * @return void
+     */
+    public function __set($key, $value)
+    {
+        $this[ $key ] = $value;
     }
 }

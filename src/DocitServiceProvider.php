@@ -9,9 +9,11 @@ namespace Laradic\Docit;
 
 use App;
 use Illuminate\Foundation\Application;
+use Laradic\Docit\Log\Writer;
 use Laradic\Docit\Parsers\MarkdownParser;
 use Laradic\Docit\Projects\ProjectFactory;
 use Laradic\Support\ServiceProvider;
+use Monolog\Logger;
 
 
 /**
@@ -47,13 +49,18 @@ class DocitServiceProvider extends ServiceProvider
         $this->handleNavigation();
     }
 
-    /** @inheritdoc */
+    /**
+     * Register the service provider.
+     *
+     * @return \Illuminate\Foundation\Application
+     */
     public function register()
     {
         /** @var \Illuminate\Foundation\Application $app */
         $app    = parent::register();
         $config = $app->make('config')->get('laradic/docit::config');
 
+        $this->registerLogging($config);
         $this->registerProjects($config);
         $this->registerParsers($config);
         $this->registerGithub($config);
@@ -63,6 +70,24 @@ class DocitServiceProvider extends ServiceProvider
         {
             $app->register('Laradic\Docit\Providers\ConsoleServiceProvider');
         }
+
+        return $app;
+    }
+
+    protected function registerLogging($config)
+    {
+        $this->app->singleton('docit.log', function (Application $app) use ($config)
+        {
+            $monolog = new Logger('docit');
+            $writer  = new Writer($monolog, $app->make('events'));
+            if ( $config[ 'logging' ][ 'enabled' ] )
+            {
+                $writer->useFiles($config[ 'logging' ][ 'path' ]);
+            }
+
+            return $writer;
+        });
+        $this->app->bind('Laradic\Docit\Contracts\DocitLog', 'docit.log');
     }
 
     protected function registerProjects($config)
@@ -111,7 +136,8 @@ class DocitServiceProvider extends ServiceProvider
         {
             return new \Laradic\Docit\Github\GithubProjectSynchronizer(
                 $gh = $app->make('GrahamCampbell\GitHub\GitHubManager'),
-                $pf = $app->make('docit.projects')
+                $pf = $app->make('docit.projects'),
+                $app->make('docit.log')
             );
         });
         $app->bind('Laradic\Docit\Contracts\ProjectSynchronizer', 'docit.github.sync');

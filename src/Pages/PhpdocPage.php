@@ -9,11 +9,10 @@ namespace Laradic\Docit\Pages;
 
 use App;
 use Exception;
-use Laradic\Docit\Projects\Project;
+use Laradic\Docit\Parsers\Phpdoc\File;
 use Laradic\Support\Path;
 use Laradic\Support\String;
 use stdClass;
-use Symfony\Component\VarDumper\VarDumper;
 use View;
 
 
@@ -34,12 +33,12 @@ class PhpdocPage extends Page
     protected function make()
     {
 
-        $xml = $this->getFile('', function(stdClass $obj){
+        $xml = $this->getFile('', function (stdClass $obj)
+        {
 
-            $files = app('files');
-            $project = $this->getProject();
-            $xmlPath       = Path::join($this->getPath(), $project[ 'phpdoc.xml_path' ]);
-            $outputDirPath = Path::join($this->getPath(), $project[ 'phpdoc.dir' ]);
+            $files         = app('files');
+            $project       = $this->getProject();
+            $xmlPath       = Path::join($this->getPath(), $project[ 'phpdoc.dir' ], 'structure.xml');
 
             if ( ! $files->exists($xmlPath) )
             {
@@ -47,31 +46,69 @@ class PhpdocPage extends Page
             }
 
             $obj->file = $files->get($xmlPath);
-            $obj->tree = app('docit.parsers.phpdoc')->parse($obj->file);
+            $obj->tree = $this->parse($obj->file);
 
             return $obj;
         });
 
-        $this->attributes = $this->project->getDefaultPageAttributes();
+        # set default attributes & layout
+        $this->attributes             = $this->project->getDefaultPageAttributes();
+        $this->attributes[ 'layout' ] = $this->project[ 'phpdoc.layout' ];
 
+        # adjust page to remove the phpdoc.dir at the start
+        $page = String::removeLeft($this->page, $this->project[ 'phpdoc.dir' ]);
+        $page = String::removeLeft($page, '/');
+
+        # get the right phpdoc document file
+        $segments = explode('/', $page);
+        $doc      = $xml->tree;
+        foreach ( $segments as $key => $item )
+        {
+            if ( isset($doc[ $item ]) )
+            {
+                $doc = $doc[ $item ];
+            }
+            else
+            {
+                foreach ( $doc as $d )
+                {
+                    if ( $d instanceof File and $d->name === $item )
+                    {
+                        $doc = $d;
+                        break;
+                    }
+                }
+            }
+        }
+
+        # setup view data
         $viewData = [
-            'tree' => $xml->tree,
-            'menu' => $this->menu,
-            'page' => String::removeLeft($this->project['phpdoc.dir'], $this->page)->__toString(),
-            'attributes' => $this->attributes
+            'tree'        => $xml->tree,
+            'menu'        => $this->menu,
+            'page'        => $this,
+            'currentPage' => String::removeLeft($this->page, $this->project[ 'phpdoc.dir' ]),
+            'project'     => $this->project,
+            'version'     => $this->version,
+            'attributes'  => $this->attributes,
+            'doc'         => $doc
         ];
 
-        $index = View::make('laradic/docit::phpdoc.index')->with($viewData)->render();
+        # render the index (phpdoc navigation) into index var, to use in the content
+        $index               = View::make('laradic/docit::phpdoc.index')->with($viewData)->render();
+        $viewData[ 'index' ] = $index;
 
-        $viewData['index'] = $index;
+        # and finally the page itself
         $this->content = View::make('laradic/docit::phpdoc.page')->with($viewData);
-
-        VarDumper::dump($viewData);
-        die();
     }
 
     protected function parse($str)
     {
         return app('docit.parsers.phpdoc')->parse($str);
+    }
+
+    public function docUrl(File $docFile)
+    {
+        $page = String::create($docFile->fullName)->removeLeft('\\')->replace('\\', '/')->__toString();
+        return $this->project->getProjects()->url($this->project->getSlug(), $this->version, $this->project['phpdoc.dir'] . '/' . $page);
     }
 }

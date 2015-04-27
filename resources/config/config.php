@@ -10,6 +10,10 @@ return array(
         'disqus'            => false,
         'share_buttons'     => array('facebook', 'twitter', 'linkedin')
     ),
+    'logging' => array(
+        'enabled' => true,
+        'path' => storage_path('logs/docit.log')
+    ),
     'github'                  => array(
         'enabled'      => true,
         'token'        => env('GITHUB_TOKEN', null),

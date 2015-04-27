@@ -10,7 +10,7 @@ use File;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Laradic\Support\Path;
-use Laradic\Support\Str;
+use Laradic\Support\String;
 use Symfony\Component\Yaml\Yaml;
 /**
  * Class Menu
@@ -123,13 +123,13 @@ class Menu implements Jsonable, Arrayable
 
     protected function resolveLink($val)
     {
-        if ( Str::startsWith('http', $val) )
+        if ( String::startsWith('http', $val) )
         {
             return $val;
         }
         else
         {
-            $path = Str::endsWith($val, '.md') ? Str::remove($val, '.md') : $val;
+            $path = String::endsWith($val, '.md') ? String::remove($val, '.md') : $val;
 
             return $this->project->getProjects()->url($this->project, $this->version, $path);
         }

@@ -1,9 +1,12 @@
 <?php namespace Laradic\Docit\Console;
 
-use Illuminate\Foundation\Application;
+
+use Laradic\Docit\Commands\DocitSyncProjectGithub;
 use Laradic\Docit\Contracts\ProjectFactory;
 use Laradic\Docit\Contracts\ProjectSynchronizer;
 use Laradic\Docit\Github\GithubProjectSynchronizer;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 
 class GithubSyncCommand extends BaseCommand
 {
@@ -23,37 +26,60 @@ class GithubSyncCommand extends BaseCommand
 
     public function fire()
     {
-        $githubProjects = [ ];
-        $choices        = [ ];
-        foreach ( $this->projects->all() as $project )
+        if ( ! $project = $this->argument('project') )
         {
-            if ( isset($project[ 'github' ]) && $project[ 'github' ][ 'enabled' ] == true )
+            $githubProjects = [ ];
+            $choices        = [ ];
+            foreach ( $this->projects->all() as $project )
             {
-                $githubProjects[ ] = $this->projects->make($project[ 'slug' ]);
-                $choices[ ]        = $project[ 'slug' ];
+                if ( isset($project[ 'github' ]) && $project[ 'github' ][ 'enabled' ] == true )
+                {
+                    $githubProjects[ ] = $this->projects->make($project[ 'slug' ]);
+                    $choices[ ]        = $project[ 'slug' ];
+                }
             }
-        }
 
-        $choice = $this->choice('Pick the github enabled project you wish to sync', $choices);
+            $choice  = $this->choice('Pick the github enabled project you wish to sync', $choices);
+            $project = $choice;
+        }
+        if ( $this->option('queue') )
+        {
+            \Queue::push(new DocitSyncProjectGithub($this->syncer), $project);
+            $this->info('Github sync command added to the queue');
+        }
+        else
+        {
+            $tagsToSync     = $this->syncer->getUnsyncedTags($project);
+            $branchesToSync = $this->syncer->getUnsyncedBranches($project);
+            $this->comment('Found ' . count($tagsToSync) . ' tags that needs to be synced in ' . $project);
+            foreach ( $tagsToSync as $tag )
+            {
+                $this->comment('Syncing ' . $tag);
+                $this->syncer->syncTag($project, $tag);
+                $this->info($tag . ' synced.');
+            }
+            $this->comment('Found ' . count($branchesToSync) . ' branches that needs to be synced');
+            foreach ( $branchesToSync as $branch )
+            {
+                $this->comment("Syncing branch $project:$branch");
+                $this->syncer->syncBranch($project, $branch);
+                $this->info($branch . ' synced.');
+            }
+            $this->info('All done sire!');
+        }
+    }
 
-        #$project    = $this->syncer->resolveProject($choice);
-        $project        = $choice;
-        $tagsToSync     = $this->syncer->getUnsyncedTags($project);
-        $branchesToSync = $this->syncer->getUnsyncedBranches($project);
-        $this->comment('Found ' . count($tagsToSync) . ' tags that needs to be synced in ' . $project);
-        foreach ( $tagsToSync as $tag )
-        {
-            $this->comment('Syncing ' . $tag);
-            $this->syncer->syncTag($project, $tag);
-            $this->info($tag . ' synced.');
-        }
-        $this->comment('Found ' . count($branchesToSync) . ' branches that needs to be synced');
-        foreach ( $branchesToSync as $branch )
-        {
-            $this->comment("Syncing branch $project:$branch");
-            $this->syncer->syncBranch($project, $branch);
-            $this->info($branch . ' synced.');
-        }
-        $this->info('All done sire!');
+    public function getOptions()
+    {
+        return [
+            [ 'queue', 'Q', InputOption::VALUE_OPTIONAL, 'The stuff' ]
+        ];
+    }
+
+    public function getArguments()
+    {
+        return [
+            [ 'project', InputArgument::OPTIONAL, 'The project you want to sync' ]
+        ];
     }
 }

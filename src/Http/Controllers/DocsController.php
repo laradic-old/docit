@@ -17,6 +17,7 @@ use Redirect;
 use Response;
 use Symfony\Component\VarDumper\VarDumper;
 use View;
+use Illuminate\Routing\Controller as BaseController;
 
 /**
  * Class DocsController
@@ -27,8 +28,24 @@ use View;
  * @copyright   2011-2015, Robin Radic
  * @link        http://radic.mit-license.org
  */
-class DocsController extends Controller
+class DocsController extends BaseController
 {
+
+    /**
+     * @var \Laradic\Docit\Projects\ProjectFactory
+     */
+    protected $projects;
+
+    /**
+     * @var \Illuminate\Contracts\Events\Dispatcher
+     */
+    protected $events;
+
+    public function __construct(ProjectFactory $projects, Dispatcher $events)
+    {
+        $this->projects = $projects;
+        $this->events   = $events;
+    }
 
     public function index()
     {
