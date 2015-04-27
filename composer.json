@@ -1,5 +1,5 @@
 {
-    "name": "laradic/docit",
+    "name": "docit/core",
     "description": "A documentation generator using markdown files. Able to sync with github manually or web-hook, edit markdown files and commit them. Lot of features",
     "type": "laradic-extension",
     "homepage": "https://github.com/laradic/docit",
@@ -39,7 +39,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Laradic\\Docit\\": "src/"
+            "Docit\\Core\\": "src/"
         }
     }
 }
